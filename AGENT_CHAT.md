@@ -1,5 +1,17 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Mode Livre, étape 3/3 : validation finale
+
+- Étape 2/3 déployée : dpl_ctDHyHqKjt7JYQ5PTU9kAMAC8C6T, READY.
+- Les vingt combinaisons thème/mode ont été capturées et inspectées à 393 × 852. Aucune largeur débordante ; contenu des pages entièrement visible. Contraste des filtres actifs ≥ 4,60:1, texte/papier ≥ 8,39:1.
+- Filtres contrôlés dans les deux modes (4→2→0→2→4), désactivés exactement rgba(0,0,0,0). Persistance de l’expérience et retour arrière vérifiés. Mouvement réduit sans délai de navigation.
+- Parcours navigateur réel dans un carnet QA séparé : création, import photo 2400 × 1600, compression JPEG 1000 × 667, rechargement, édition et conservation de la photo. Recette et photo vérifiées dans Supabase ; cinq recettes du carnet QA nettoyées, carnet initial intact.
+- Supabase Realtime vérifié entre deux clients réseau indépendants. Endpoint widget testé en production avec code absent puis code QA : réponse correcte pour cinq recettes, no-store. Scriptable et caméra physique non exécutés sur iPhone réel.
+- 35 tests couvrent préférences, filtres, CRUD, offline, gestes, tourne-page, formulaires et widget. Contrôle final sans .env.local inclus dans la publication de cette étape ; fichier local restauré automatiquement avant le push et le build distant.
+- Sources formatées pour la reprise ; README.md et VERIFICATION.md décrivent usage, preuves et limites. .vercelignore exclut explicitement fichiers de connexion, clés, outils et captures QA.
+- Livrables : https://deck-recettes.vercel.app ; https://github.com/YanisM1/deck-recettes ; Supabase https://supabase.com/dashboard/project/miltqwovqupvnaibjdgc.
+- Les tables et données des deux applications existantes sont conservées. Authentification GitHub par gh puis commits/push via git, sans plugin GitHub ni reset --hard.
+
 ## 2026-11-16 — Mode Livre, étape 2/3 : livre et tourne-page
 
 - Composant RecipeBook dédié : reliure avec couture, couverture, tranche de pages à droite et en bas, photo encadrée, titre Serif, aperçu des ingrédients, ornement et pagination.

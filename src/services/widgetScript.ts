@@ -1,4 +1,10 @@
-export function buildWidgetScript(origin:string,code:string,supabaseUrl:string,apiKey:string){return `// DeckChef — collez ce script dans Scriptable, puis ajoutez son widget.
+export function buildWidgetScript(
+  origin: string,
+  code: string,
+  supabaseUrl: string,
+  apiKey: string,
+) {
+  return `// DeckChef — collez ce script dans Scriptable, puis ajoutez son widget.
 // Ce code contient l'accès privé à votre carnet : conservez-le pour vous.
 const APP = ${JSON.stringify(origin)};
 const CODE = ${JSON.stringify(code)};
@@ -58,4 +64,5 @@ footer.font = Font.systemFont(9); footer.textColor = ink; footer.textOpacity = 0
 widget.refreshAfterDate = new Date(Date.now()+60*60*1000);
 if (!config.runsInWidget) await widget.presentMedium();
 Script.setWidget(widget); Script.complete();
-`}
+`;
+}
