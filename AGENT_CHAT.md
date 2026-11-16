@@ -1,5 +1,14 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Étape 3 : synchronisation et CRUD local
+
+- Étape 2 déployée en production, état READY (dpl_4GbRTHN7Q8mTcgqVsfrW5vq1Lstv).
+- Store typé à cache local versionné et file d’opérations persistée (création, édition, suppression, reset). Écritures immédiates, erreurs de quota explicites, reprise après rechargement et reconnexion.
+- Rechargement au focus, visibilité et retour réseau ; mises à jour via Supabase Realtime Broadcast (invalidations sans données privées sur un canal dérivé par SHA-256 du code), plus récupération périodique de secours. Les politiques de lecture restent privées ; aucune ouverture publique pour satisfaire Realtime.
+- Initialisation atomique du carnet par RPC security invoker + marqueur recipe_collections : quatre exemples à la première ouverture, aucun réensemencement après reset. Photos locales ajoutées et crédits documentés.
+- Réglages : état réel connexion/temps réel, code privé à copier/importer, reset avec deux confirmations.
+- 19 tests réussis ; build réussi. Test distant réel : création/lecture/édition autorisées au propriétaire, lecture et suppression croisées invisibles, insertion croisée rejetée. Seules les lignes QA temporaires ont été supprimées après le test.
+
 ## 2026-11-16 — Étape 2 : PWA, calibration et dix thèmes
 
 - Étape 1 déployée : https://deck-recettes.vercel.app (dpl_7MsuyCHJMSbWXfCQ6aMBNu6AsHm7, READY).
