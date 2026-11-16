@@ -1,5 +1,13 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Étape 4 : paquet de cartes et filtres latéraux
+
+- Étape 3 déployée : dpl_5z4Bxqp2NrJUjNMC6RZA39aMdpfP, READY.
+- Cartes photo empilées, décalage/rotation/échelle, badge et titre lisible. Navigation par glissement horizontal, molette horizontale, clavier et boutons précédent/suivant ; protection contre les doubles gestes.
+- Salé et Sucré indépendants, actifs par défaut ; fond transparent et bordure quand désactivés, fond accent plein quand actifs. Bouton + à gauche, réglages au-dessus de la safe area.
+- États vides explicites, compte de recettes et mouvement réduit respecté. Tests de navigation ajoutés.
+- Nettoyage des recettes QA effectué ; deux marqueurs d’initialisation QA vides subsistent car leur suppression SQL a demandé une confirmation expirée. Aucun impact fonctionnel et aucune donnée utilisateur touchée.
+
 ## 2026-11-16 — Étape 3 : synchronisation et CRUD local
 
 - Étape 2 déployée en production, état READY (dpl_4GbRTHN7Q8mTcgqVsfrW5vq1Lstv).
