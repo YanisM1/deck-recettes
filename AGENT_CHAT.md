@@ -1,5 +1,16 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Gestes directs, étape 3/3 : Régressions et validation finale
+
+- Étape 2 publiée : commit 2d094e0, déploiement dpl_GPaCAZjgfwkrHFgmotwG642PzG4v, READY. Production contrôlée par vercel curl : HTTP 200, titre DeckChef, protection conservée.
+- Nouvelle suite paramétrée sur Cartes et Livre : index N après 1 et 4 recettes, état final sous la dernière recette, avance bloquée à N, retour inverse depuis la fin, puis remise à zéro.
+- React Profiler : zéro commit pendant plusieurs frames de glissement, index inchangé avant la fin du ressort puis un seul commit. Vérification des transforms exactes et du clic de compatibilité supprimé.
+- Régressions : petit geste lent, flick rapide, pause avant relâchement, seuil strict 65 px, annulation/capture perdue sans coordonnées, pointeur secondaire, intention verticale, doubles commandes, clavier/molette, mouvement réduit et nettoyage des RAF/temporisateurs au démontage.
+- Pointeur quittant la scène avant la reconnaissance libéré ; pointerId filtré aussi sur pointerleave pour préserver le geste primaire en multitouch.
+- Ancien useDeckNavigation et ses tests retirés après migration des deux vues. README et VERIFICATION actualisés. Relecture indépendante finale des couches, limites, captures, CSS GPU et marque-pages.
+- 84 tests dans 14 fichiers et build réussis ; validation finale sans .env.local via checkpoint, puis commit/push origin/main et troisième déploiement CLI Vercel. Aucune donnée Supabase modifiée.
+- Captures locales : .tools/cards-end-direct.jpg, .tools/book-end-direct.jpg, .tools/book-end-oled-direct.jpg. Vérification à 393×852 en navigateur de bureau ; 120 Hz et Safari sur iPhone physique restent à tester sur appareil.
+
 ## 2026-11-16 — Gestes directs, étape 2/3 : Livre et couverture finale
 
 - Étape 1 publiée : commit 22cdd04, déploiement dpl_GABNYS2HFT7yCGC6VR7RoM8aEhPF, READY.
@@ -10,6 +21,7 @@
 - Contrôle réel navigateur 393×852 : gestes natifs dans les deux modes, fins N, retours inverses depuis les fins, remises à zéro. Couverture Chef Crème et OLED inspectées, aucun débordement ni erreur console.
 - Boutons latéraux inchangés et rectangles identiques : x=18, y=294,5/376,5/487,5, dimensions 49×70. Les captures QA sont ignorées dans .tools.
 - Tests Livre réécrits pour les transforms directes et le ressort 380 ms ; suite de 55 tests et build réussis. Checkpoint complet sans .env.local avant commit/push/déploiement.
+
 ## 2026-11-16 — Gestes directs, étape 1/3 : Paquet de Cartes
 
 - AGENTS.md et journal lus ; npm run sync exécuté (origin/main à jour, dépendances installées).
@@ -18,6 +30,7 @@
 - Index N réel : carte de fin thémée sous la dernière recette, bouton Revenir au début, retour inverse possible et avance bloquée à la fin. Filtres et marque-pages inchangés.
 - Tests ciblés : déplacement exact, couche suivante, zéro commit React pendant le doigt, changement d’index après 380 ms, fin sous la dernière et retour depuis la droite. Vérification complète sans .env.local par le checkpoint avant commit/push/déploiement.
 - Les moteurs utilisent requestAnimationFrame à la cadence de l’écran ; aucune mesure 120 Hz sur iPhone physique n’est revendiquée.
+
 ## 2026-11-16 — Marque-pages verticaux et placement commun aux Cartes
 
 - AGENTS.md et journal lus ; npm run sync exécuté, dépôt déjà à jour et dépendances installées.

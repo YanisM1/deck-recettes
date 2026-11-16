@@ -1,5 +1,17 @@
 # Vérification DeckChef — 16 novembre 2026
 
+## Navigation directe et vrais états de fin
+
+- 84 tests réussis dans 14 fichiers ; build TypeScript/Vite réussi, avec validation sans .env.local à chaque étape.
+
+- Les deux vues utilisent useDirectNavigation : startX/currentX/isDragging/lastX/velocityX en refs, écritures DOM regroupées par requestAnimationFrame, une seule mise à jour de l’index après le ressort de 380 ms. Les tests React Profiler mesurent zéro commit pendant le déplacement et un seul à la validation.
+- Cartes : transform translate3d(dx,abs(dx)×0,04,0) et rotate3d de dx×0,05 degrés ; carte suivante agrandie en temps réel. Au retour, la précédente rentre de +420 px et la courante reste centrée.
+- Livre : perspective 1800 px, rotation autour de la reliure gauche ; recto/verso et ombre dynamique. Les mouvements animent uniquement transform et opacity, sans lecture de layout pendant pointermove.
+- Fins réelles à l’index N, placées sous la dernière recette : carte thémée ou couverture cousue sans feuille/tranche papier. Avance interdite à N, retour inverse vers N−1 et bouton de remise à zéro. Tests avec 1 et 4 recettes dans les deux modes.
+- Seuils stricts >65 px ou >0,35 px/ms, petit geste lent annulé, flick rapide accepté, vitesse ancienne abandonnée après pause. Annulation sans coordonnées, capture perdue, pointeur secondaire, intention verticale, doubles commandes, molette/clavier, mouvement réduit et démontage couverts.
+- Navigateur 393×852 : gestes natifs avant/arrière dans les deux modes ; fins, retours inverses et remises à zéro confirmés. Couverture en Chef Crème et OLED Black & Gold inspectée, aucun débordement horizontal ni erreur console. Rectangles des boutons identiques aux coordonnées ci-dessous.
+- Validation complète sans .env.local à chacune des trois publications. Limite : navigateur de bureau au viewport demandé ; ni mesure 120 Hz ni essai Safari sur iPhone physique. Aucun changement de données Supabase pendant ce chantier.
+
 ## Marque-pages verticaux alignés aux Cartes
 
 - À 393×852, les deux modes partagent les trois rectangles (x=18, y=294,5/376,5/487,5, largeur=49, hauteur=70). Aucun déplacement à la bascule.

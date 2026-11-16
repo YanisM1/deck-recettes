@@ -137,8 +137,8 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
       onPointerUp: (event: PointerEvent<HTMLDivElement>) => endPointer(event),
       onPointerCancel: (event: PointerEvent<HTMLDivElement>) => endPointer(event, true),
       onLostPointerCapture: (event: PointerEvent<HTMLDivElement>) => endPointer(event, true),
-      onPointerLeave: () => {
-        if (isDragging.current && intent.current !== "horizontal") {
+      onPointerLeave: (event: PointerEvent<HTMLDivElement>) => {
+        if (isDragging.current && event.pointerId === pointerId.current && intent.current !== "horizontal") {
           isDragging.current = false;
           pointerId.current = null;
           painter.current(0, 0, false);

@@ -2,7 +2,9 @@
 
 PWA personnelle de recettes en français : React, TypeScript, Vite, Tailwind, Vitest et Supabase.
 
-Dernières améliorations : plein écran mobile fixé aux quatre bords avec fond du thème jusque sous la zone d’accueil ; gestes du Livre inversés (gauche = page suivante, droite = précédente) ; filtres à icônes pizza/gâteau sur mini-cartes ou rubans à encoche. Le mode Cartes conserve son sens de navigation.
+Les cartes et les pages suivent le doigt via des références DOM et requestAnimationFrame, puis se posent avec un ressort de 380 ms. Aucun état React n’est mis à jour pendant pointermove. En Cartes, glisser vers la droite écarte la recette et vers la gauche ramène la précédente depuis la droite. En Livre, glisser vers la gauche tourne la feuille, vers la droite la rabat depuis la reliure.
+
+Après la dernière recette, une vraie carte de fin ou une couverture intérieure cousue apparaît. Le bouton central revient au début ; le geste inverse ramène la dernière recette. Les trois boutons à gauche conservent le même emplacement dans les deux modes, avec rubans verticaux et icônes droites dans le Livre.
 
 Le formulaire propose « C’est un gâteau / moule » dans les deux catégories, puis 20, 26 ou 28 cm. Un badge « Moule 26 cm » apparaît sur carte, page et lecteur. Ces informations sont conservées localement et synchronisées dans `is_cake` / `pan_size`. Une ancienne base sans ces colonnes reste lisible : les recettes ordinaires se synchronisent, les informations de moule restent dans la file locale jusqu’à la migration.
 
@@ -43,6 +45,8 @@ Les réglages permettent de copier un script Scriptable personnel pour le widget
 ## Vérifications et limites
 
 Tests : préférences, modes, navigation, gestes, filtres cumulables dans les deux modes, création/édition, checklist, confirmations, file hors ligne, quota et widget. Les scripts `verify-supabase.mjs` et `verify-realtime.mjs` réalisent les contrôles distants explicites avec `.env.local`.
+
+La navigation est vérifiée sur des paquets de 1 et 4 recettes jusqu’à l’index N, avec retour inverse et remise à zéro. Les tests Profiler confirment l’absence de rendu React pendant les mouvements. Les seuils de distance/vitesse, le mouvement réduit et les annulations sont couverts. requestAnimationFrame suit la cadence disponible : aucune mesure de 120 images/s sur un iPhone physique n’a été effectuée.
 
 Vérification navigateur à 393 × 852 des vingt combinaisons thème/mode, du centrage et de l’absence de débordement. Une photo de test 2400 × 1600 a été compressée dans le navigateur en JPEG 1000 × 667, puis retrouvée dans Supabase après rechargement et modification. Aucun essai physique de l’appareil photo, de l’installation iOS ou de Scriptable sur un iPhone réel n’a été effectué.
 
