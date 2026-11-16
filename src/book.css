@@ -59,31 +59,39 @@
   left: 16px;
   gap: 10px;
 }
-[data-layout="book"] .filter-button {
-  width: 63px;
-  height: 49px;
-  border-radius: 4px 10px 10px 4px;
-  box-shadow: 2px 3px 5px #0001;
-  position: relative;
+[data-layout="book"] .side-button {
+  width: 68px;
+  height: 50px;
+  border: 0;
+  border-radius: 0;
+  background: var(--button-fill);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 15% 50%);
 }
-[data-layout="book"] .filter-button::before {
-  content: "";
+[data-layout="book"] .side-button::before {
+  display: none;
+}
+[data-layout="book"] .sidebar-icon {
+  margin-left: 6px;
+}
+[data-layout="book"] .ribbon-outline {
+  display: block;
   position: absolute;
-  left: 6px;
-  top: 7px;
-  bottom: 7px;
-  border-left: 1px dashed currentColor;
-  opacity: 0.3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.5;
+  pointer-events: none;
+}
+[data-layout="book"] .ribbon-stitch {
+  stroke-dasharray: 2 2;
+  opacity: 0.6;
 }
 [data-layout="book"] .filter-button[aria-pressed="false"] {
   background: transparent;
   box-shadow: none;
-}
-[data-layout="book"] .add-button {
-  width: 63px;
-  height: 45px;
-  border-radius: 4px 10px 10px 4px;
-  background: var(--surface);
 }
 [data-layout="book"] .side-divider {
   margin: 6px 0;

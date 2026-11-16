@@ -1,5 +1,12 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Corrections, étape 2/3 : boutons à icônes
+
+- Étape 1 publiée : dpl_D3EMZeEhBCj9jHrHiA9o7NQ6pWs4, READY.
+- Salé et Sucré remplacés visuellement par des SVG pizza et part de gâteau. Noms accessibles et infobulles conservés, sans texte dans les boutons.
+- Les trois boutons ont la même forme : mini-cartes verticales à double bordure en mode Cartes ; rubans à encoche en V, contour SVG et couture en mode Livre.
+- Fond actif primaire/secondaire, fond inactif transparent et icône atténuée. Vérification navigateur : rgba(0,0,0,0) après désactivation, forme et filtres opérationnels. Test des icônes et des actions ajouté.
+
 ## 2026-11-16 — Corrections, étape 1/3 : plein écran et sens du Livre
 
 - npm run sync exécuté : origin/main à jour, dépendances installées, aucun changement local antérieur.

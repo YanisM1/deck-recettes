@@ -315,23 +315,49 @@
   align-items: center;
   gap: 12px;
 }
-.filter-button {
+.side-button {
+  --button-fill: transparent;
+  position: relative;
+  display: grid;
+  place-items: center;
   width: 49px;
-  height: 54px;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  background: transparent;
-  font-size: 11px;
+  height: 70px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--text), transparent 60%);
+  border-radius: 7px;
+  background: var(--button-fill);
   transition:
     background 0.2s,
     color 0.2s;
 }
+.side-button::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  opacity: 0.25;
+  pointer-events: none;
+}
+.sidebar-icon {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+.filter-button[aria-pressed="false"] .sidebar-icon {
+  opacity: 0.5;
+}
+.ribbon-outline {
+  display: none;
+}
 .filter-sale[aria-pressed="true"] {
+  --button-fill: var(--accent-primary);
   background: var(--accent-primary);
   border-color: var(--accent-primary);
   color: var(--on-primary);
 }
 .filter-sucre[aria-pressed="true"] {
+  --button-fill: var(--accent-secondary);
   background: var(--accent-secondary);
   border-color: var(--accent-secondary);
   color: var(--on-secondary);
@@ -341,15 +367,6 @@
   width: 1px;
   background: var(--line);
   margin: 2px 0;
-}
-.add-button {
-  height: 49px;
-  width: 49px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: transparent;
-  display: grid;
-  place-items: center;
 }
 .deck-scene {
   position: absolute;
