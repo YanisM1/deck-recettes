@@ -5,6 +5,7 @@ import { themes, usePreferences, inkOn } from './services/preferences'
 import { getRecipeStore, useRecipes } from './services/recipeSync'
 import { Sidebar } from './components/Sidebar'
 import { CardDeck } from './components/CardDeck'
+import { RecipeBook } from './components/RecipeBook'
 import { RecipeReader } from './components/RecipeReader'
 import { RecipeForm } from './components/RecipeForm'
 import { filterRecipes, type Filters, type Recipe } from './types'
@@ -20,7 +21,7 @@ export default function App() {
     <button className="settings-trigger icon-button" aria-label="Réglages" onClick={()=>setSettings(true)}><SettingsIcon size={21}/></button>
     <div className="home-intro"><p className="brand"><ChefHat size={17}/> DECKCHEF</p><h1>{preferences.layoutMode==='book'?'À feu doux':'À table'}<span>.</span></h1><p className="intro-caption">{preferences.layoutMode==='book'?'De belles pages à cuisiner.':'Vos recettes, à votre façon.'}</p></div>
     <Sidebar filters={filters} onToggle={category=>setFilters(value=>({...value,[category]:!value[category]}))} onAdd={()=>setEditing('new')}/>
-    {visible.length?<CardDeck key={visible.map(r=>r.id).join('|')} recipes={visible} onOpen={recipe=>setSelectedId(recipe.id)}/>:<div className="empty-state"><ChefHat size={34}/><h2>{recipes.recipes.length?'Un peu plus de choix ?':'Votre prochaine découverte.'}</h2><p>{recipes.recipes.length?'Activez Salé ou Sucré pour retrouver vos recettes.':'Chaque belle recette commence par une idée.'}</p>{recipes.recipes.length?<button className="secondary-button" onClick={()=>setFilters({sale:true,sucre:true})}>Tout afficher</button>:<button className="primary-button" onClick={()=>setEditing('new')}>Ajouter ma première recette</button>}</div>}
+    {visible.length?(preferences.layoutMode==='book'?<RecipeBook key={visible.map(r=>r.id).join('|')} recipes={visible} onOpen={recipe=>setSelectedId(recipe.id)}/>:<CardDeck key={visible.map(r=>r.id).join('|')} recipes={visible} onOpen={recipe=>setSelectedId(recipe.id)}/>):<div className="empty-state"><ChefHat size={34}/><h2>{recipes.recipes.length?'Un peu plus de choix ?':'Votre prochaine découverte.'}</h2><p>{recipes.recipes.length?'Activez Salé ou Sucré pour retrouver vos recettes.':'Chaque belle recette commence par une idée.'}</p>{recipes.recipes.length?<button className="secondary-button" onClick={()=>setFilters({sale:true,sucre:true})}>Tout afficher</button>:<button className="primary-button" onClick={()=>setEditing('new')}>Ajouter ma première recette</button>}</div>}
     {selected&&<RecipeReader key={selected.id} recipe={selected} onClose={()=>setSelectedId(null)} onEdit={()=>setEditing(selected)} onDelete={()=>{getRecipeStore().remove(selected.id);setSelectedId(null)}}/>}
     {editing&&<RecipeForm recipe={editing==='new'?undefined:editing} onClose={()=>setEditing(null)} onSave={(input,id)=>{const saved=getRecipeStore().save(input,id);setEditing(null);setSelectedId(saved.id)}}/>}
     {settings&&<Settings onClose={()=>setSettings(false)}/>}

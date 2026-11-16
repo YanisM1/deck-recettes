@@ -1,5 +1,12 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Mode Livre, étape 2/3 : livre et tourne-page
+
+- Composant RecipeBook dédié : reliure avec couture, couverture, tranche de pages à droite et en bas, photo encadrée, titre Serif, aperçu des ingrédients, ornement et pagination.
+- Tourne-page 3D avec perspective 1400 px, origine left center et rotation 0 à -180 degrés. Recto/verso et ombre mobile sur la page du dessous ; mouvement inverse pour revenir. Glissement, défilement horizontal, clavier et coins de page accessibles.
+- Lecture plein écran adaptée au livre : papier texturé clair/sombre, reliure, photo encadrée et typographie de manuel de cuisine. Checklist et actions finales conservées.
+- Test d’animation avant/arrière, pagination et ouverture de la recette active ajouté. Harmonisation finale et vérification des vingt combinaisons thème/mode à l’étape 3/3.
+
 ## 2026-11-16 — Mode Livre, étape 1/3 : état et sélecteur
 
 - Base étape 6 déployée : dpl_BSHCYgWTc4117rEtoS4XDm83WZ92, READY. Endpoint widget vérifié en production : code absent rejeté.
