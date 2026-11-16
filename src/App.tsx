@@ -11,7 +11,7 @@ import { filterRecipes, type Filters, type Recipe } from './types'
 export default function App() {
   const preferences=usePreferences(), theme=themes.find(t=>t.id===preferences.theme)!, [settings,setSettings]=useState(false)
   const recipes=useRecipes()
-  const [filters,setFilters]=useState<Filters>({sale:true,sucre:true}),[selectedId,setSelectedId]=useState<string|null>(null),[editing,setEditing]=useState<Recipe|'new'|null>(null)
+  const [filters,setFilters]=useState<Filters>({sale:true,sucre:true}),[selectedId,setSelectedId]=useState<string|null>(()=>new URLSearchParams(window.location.search).get('recipe')),[editing,setEditing]=useState<Recipe|'new'|null>(null)
   const selected=recipes.recipes.find(recipe=>recipe.id===selectedId)
   const visible=filterRecipes(recipes.recipes,filters)
   useEffect(()=>{document.querySelector('meta[name="theme-color"]')?.setAttribute('content',theme.bg)},[theme.bg])

@@ -1,5 +1,13 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Étape 6 : widget et base applicative complète
+
+- Étape 5 déployée : dpl_Eb2aeUPxNtCZwhrL1Ksr25JBHpwf, READY.
+- Endpoint Node Web API GET /api/widget-status : code de carnet obligatoire en en-tête, réponse privée/no-store, recette quotidienne et comptage via Supabase, erreurs sans fuite de détails internes.
+- Script Scriptable personnel copiable dans les réglages, compatible petits/moyens widgets, photo et lien vers la recette. Accès direct Supabase de secours si la protection Vercel impose une connexion ; aucune protection Vercel désactivée.
+- 29 tests et build réussis. Contrôle navigateur réel : viewport et cadre 393 × 852, aucun débordement horizontal, modale centrée en (196,5 ; 426), statut Supabase temps réel connecté. Lecture, checklist et ouverture de l’édition vérifiées.
+- Base DeckChef complète ; les trois étapes de mode Livre suivent maintenant.
+
 ## 2026-11-16 — Étape 5 : lecture et édition complètes
 
 - Étape 4 déployée : dpl_4SmSg2qzpdFJURBu3Q2waAXYENTR, READY.
