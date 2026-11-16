@@ -2,7 +2,7 @@
 
 ## Corrections plein écran, icônes et moules
 
-- Après mise à jour : 51 tests réussis, avec contrôle final sans `.env.local`.
+- Après mise à jour : 53 tests réussis, avec contrôle final sans `.env.local`, dont ouverture/fermeture d’un carnet à une seule recette sans collision de clés React.
 - Plein écran vérifié aux dimensions 393×852, 402×874, 430×932 et 393×680 : cadre (0,0,largeur,hauteur), aucune largeur débordante. Fonds html/body/#root/conteneur noirs en OLED et accordés au thème clair.
 - Livre : swipe et molette vers la gauche avancent, vers la droite reviennent. La rotation sortante ou entrante et son ombre suivent la page correspondante ; sens des Cartes préservé.
 - Filtres SVG sans texte visuel, noms accessibles conservés. Trois mini-cartes verticales à double bordure ou trois rubans à encoche en V. Fond inactif réellement transparent après la transition.

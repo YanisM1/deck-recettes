@@ -76,13 +76,13 @@ export default function App() {
       {visible.length ? (
         preferences.layoutMode === "book" ? (
           <RecipeBook
-            key={visible.map((r) => r.id).join("|")}
+            key={`book-${visible.map((r) => r.id).join("|")}`}
             recipes={visible}
             onOpen={(recipe) => setSelectedId(recipe.id)}
           />
         ) : (
           <CardDeck
-            key={visible.map((r) => r.id).join("|")}
+            key={`cards-${visible.map((r) => r.id).join("|")}`}
             recipes={visible}
             onOpen={(recipe) => setSelectedId(recipe.id)}
           />
@@ -119,7 +119,7 @@ export default function App() {
       )}
       {selected && (
         <RecipeReader
-          key={selected.id}
+          key={`reader-${selected.id}`}
           recipe={selected}
           onClose={() => setSelectedId(null)}
           onEdit={() => setEditing(selected)}

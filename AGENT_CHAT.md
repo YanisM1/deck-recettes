@@ -1,5 +1,11 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Contrôle final : carnet à une seule recette
+
+- Étape 3 déployée : dpl_2cNUvDjocT1cWHrAqPQtinBSVvNQ, READY.
+- Le journal de l’aperçu a révélé une collision de clés React entre la carte/page et le lecteur lorsque le carnet ne contient qu’une recette. Les clés sont maintenant distinctes par vue.
+- Deux tests ciblés vérifient ouverture/fermeture dans les deux modes sans avertissement de clé dupliquée. Suite totale : 53 tests. Nouvelle validation complète sans .env.local, commit/push Git et déploiement final.
+
 ## 2026-11-16 — Corrections, étape 3/3 : Gâteau et taille du moule
 
 - Étape 2 publiée : dpl_8xC5b337yyqaGBgruXEdcJfqnAqG, READY.
