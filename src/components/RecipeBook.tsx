@@ -46,6 +46,7 @@ export function RecipeBook({
   const { index, direction, go, scene, gestures } = useDeckNavigation(
     recipes.length,
     680,
+    -1,
   );
   const recipe = recipes[index],
     target = recipes[index + direction] || recipe,

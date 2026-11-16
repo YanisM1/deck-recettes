@@ -8,6 +8,9 @@ it("ouvre les réglages et applique une des dix palettes", () => {
   expect(screen.getByRole("dialog")).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Dracula" }));
   expect(screen.getByRole("main")).toHaveAttribute("data-theme", "dracula");
+  expect(document.documentElement.style.getPropertyValue("--bg-main")).toBe(
+    "#282a36",
+  );
   expect(screen.getByRole("button", { name: "Dracula" })).toHaveAttribute(
     "aria-pressed",
     "true",
@@ -25,9 +28,10 @@ it.each(["cards", "book"] as const)(
         .querySelector(".book-page-navigation p,.deck-pagination p")
         ?.textContent?.replace(/\s/g, "");
     fireEvent.click(screen.getByRole("button", { name: "Sucré" }));
-    expect(
-      screen.getByRole("button", { name: "Sucré" }),
-    ).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Sucré" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     expect(count()).toBe(mode === "book" ? "Page1sur2" : "01/02");
     fireEvent.click(screen.getByRole("button", { name: "Salé" }));
     expect(screen.getByText("Un peu plus de choix ?")).toBeInTheDocument();

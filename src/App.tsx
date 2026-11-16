@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useLayoutEffect, useState, type CSSProperties } from "react";
 import { Settings as SettingsIcon, ChefHat } from "lucide-react";
 import { Settings } from "./components/Settings";
 import { themes, usePreferences, inkOn } from "./services/preferences";
@@ -21,7 +21,9 @@ export default function App() {
     [editing, setEditing] = useState<Recipe | "new" | null>(null);
   const selected = recipes.recipes.find((recipe) => recipe.id === selectedId);
   const visible = filterRecipes(recipes.recipes, filters);
-  useEffect(() => {
+  useLayoutEffect(() => {
+    document.documentElement.style.setProperty("--bg-main", theme.bg);
+    document.documentElement.style.colorScheme = theme.dark ? "dark" : "light";
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", theme.bg);

@@ -30,16 +30,25 @@ it("tourne au swipe et à la molette horizontale, et ignore le scroll vertical",
     <RecipeBook recipes={starterRecipes} onOpen={() => {}} />,
   );
   const scene = container.querySelector(".book-scene")!;
+  fireEvent.pointerDown(scene, { clientX: 230, clientY: 300, button: 0 });
+  fireEvent.pointerUp(scene, { clientX: 120, clientY: 304, button: 0 });
+  expect(container.querySelector(".turn-forward")).toBeInTheDocument();
+  act(() => vi.advanceTimersByTime(680));
+  expect(screen.getByText("Page 2 sur 4")).toBeInTheDocument();
+  fireEvent.wheel(scene, { deltaX: -90, deltaY: 0 });
+  act(() => vi.advanceTimersByTime(680));
+  expect(screen.getByText("Page 3 sur 4")).toBeInTheDocument();
   fireEvent.pointerDown(scene, { clientX: 120, clientY: 300, button: 0 });
   fireEvent.pointerUp(scene, { clientX: 230, clientY: 304, button: 0 });
+  expect(container.querySelector(".turn-backward")).toBeInTheDocument();
   act(() => vi.advanceTimersByTime(680));
   expect(screen.getByText("Page 2 sur 4")).toBeInTheDocument();
   fireEvent.wheel(scene, { deltaX: 90, deltaY: 0 });
   act(() => vi.advanceTimersByTime(680));
-  expect(screen.getByText("Page 3 sur 4")).toBeInTheDocument();
+  expect(screen.getByText("Page 1 sur 4")).toBeInTheDocument();
   fireEvent.wheel(scene, { deltaX: 0, deltaY: 100 });
   act(() => vi.advanceTimersByTime(680));
-  expect(screen.getByText("Page 3 sur 4")).toBeInTheDocument();
+  expect(screen.getByText("Page 1 sur 4")).toBeInTheDocument();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });

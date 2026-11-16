@@ -1,5 +1,13 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Corrections, étape 1/3 : plein écran et sens du Livre
+
+- npm run sync exécuté : origin/main à jour, dépendances installées, aucun changement local antérieur.
+- Meta viewport conforme à la demande ; html/body/#root à pleine hauteur avec fond --bg-main synchronisé au thème avant peinture. Le conteneur mobile est fixé aux quatre bords, sans limite de 852 px. Le cadre limité reste uniquement dans la preview desktop.
+- Contrôle navigateur à 393×852, 402×874, 430×932 et 393×680 : cadre exactement égal au viewport, aucun débordement. En OLED, les quatre fonds sont noirs (#000000), y compris les éléments racines.
+- Livre : glisser ou défiler vers la gauche avance ; vers la droite revient. La page correspondante utilise la rotation sortante 0→−180° ou sa rotation de retour, avec l’ombre associée. Boutons et clavier gardent leur sens sémantique. Sens des Cartes conservé.
+- Tests des deux sens du swipe et de la molette mis à jour, ainsi que propagation du fond de thème. Validation et déploiement via checkpoint sans .env.local.
+
 ## 2026-11-16 — Mode Livre, étape 3/3 : validation finale
 
 - Étape 2/3 déployée : dpl_ctDHyHqKjt7JYQ5PTU9kAMAC8C6T, READY.
