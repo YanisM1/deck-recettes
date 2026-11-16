@@ -1,5 +1,13 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Gestes directs, étape 1/3 : Paquet de Cartes
+
+- AGENTS.md et journal lus ; npm run sync exécuté (origin/main à jour, dépendances installées).
+- Nouveau moteur partagé : position, vitesse, intention et RAF dans des refs ; aucun setState dans pointermove. Une seule mise à jour de l’index après le ressort de 380 ms. Nettoyage des temporisateurs/RAF et verrouillage des gestes pendant le ressort.
+- Cartes voisines distinctes déjà montées : la courante suit dx vers la droite, la suivante grandit ; le retour ramène la précédente depuis +420 px. Seuls transform 3D et opacity sont animés, avec will-change et backface-visibility.
+- Index N réel : carte de fin thémée sous la dernière recette, bouton Revenir au début, retour inverse possible et avance bloquée à la fin. Filtres et marque-pages inchangés.
+- Tests ciblés : déplacement exact, couche suivante, zéro commit React pendant le doigt, changement d’index après 380 ms, fin sous la dernière et retour depuis la droite. Vérification complète sans .env.local par le checkpoint avant commit/push/déploiement.
+- Les moteurs utilisent requestAnimationFrame à la cadence de l’écran ; aucune mesure 120 Hz sur iPhone physique n’est revendiquée.
 ## 2026-11-16 — Marque-pages verticaux et placement commun aux Cartes
 
 - AGENTS.md et journal lus ; npm run sync exécuté, dépôt déjà à jour et dépendances installées.

@@ -388,15 +388,54 @@
   text-align: left;
   padding: 0;
   box-shadow: 0 12px 25px #2222;
-  transform: translateY(calc(var(--depth) * 7px))
-    rotate(calc(var(--depth) * 2deg)) scale(calc(1 - var(--depth) * 0.025));
+  transform: translate3d(0, 0, 0) rotate3d(0, 0, 1, 0deg) scale3d(1, 1, 1);
   transform-origin: center 80%;
-  z-index: calc(5 - var(--depth));
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  user-select: none;
   border: 1px solid color-mix(in srgb, var(--bg), transparent 35%);
 }
 .recipe-card:not(.card-depth-0) {
   pointer-events: none;
-  filter: brightness(0.7);
+}
+.card-open-area {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  text-align: left;
+  background: transparent;
+  border-radius: inherit;
+}
+.deck-end-card {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--accent-primary);
+}
+.deck-end-content {
+  height: 100%;
+  padding: 30px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 18px;
+  background: radial-gradient(ellipse at top, color-mix(in srgb, var(--accent-primary), transparent 86%), transparent 75%);
+}
+.deck-end-content > svg { color: var(--accent-primary); }
+.deck-end-content h2 { font: 32px/1.1 Georgia, serif; }
+.deck-end-content p { font-size: 12px; line-height: 1.7; color: var(--muted); }
+.deck-end-content .end-overline { font-size: 7px; letter-spacing: 1.6px; }
+.deck-reset {
+  min-height: 48px;
+  padding: 12px 15px;
+  margin-top: 10px;
+  border-radius: 12px;
+  background: var(--accent-primary);
+  color: var(--on-primary);
+  font-size: 12px;
 }
 .card-photo {
   width: 100%;
@@ -521,24 +560,6 @@
   font:
     22px Georgia,
     serif;
-}
-.dealing-forward {
-  animation: deal-forward 0.36s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-.dealing-backward {
-  animation: deal-backward 0.36s cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-@keyframes deal-forward {
-  to {
-    transform: translateX(135%) rotate(14deg);
-    opacity: 0;
-  }
-}
-@keyframes deal-backward {
-  to {
-    transform: translateX(-135%) rotate(-14deg);
-    opacity: 0;
-  }
 }
 .empty-state {
   position: absolute;
