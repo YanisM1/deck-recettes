@@ -1,5 +1,15 @@
 # Vérification DeckChef — 16 novembre 2026
 
+## Reconstruction du swipe au doigt
+
+- 108 tests dans 15 fichiers. Avant correction, la séquence Pointer tactile + Touch + perte de capture enfant reproduisait l’échec dans les deux modes (index restait à 0). La même séquence passe après reconstruction.
+- Événements touchstart/touchmove/touchend/touchcancel natifs, touchmove explicitement passive:false. Le contact est suivi par identifier ; aucun setPointerCapture, aucun transfert ni annulation provoquée par lostpointercapture. Les événements Pointer tactiles de compatibilité sont ignorés par ce chemin.
+- Référence du diagnostic : [capture implicite tactile, W3C](https://www.w3.org/TR/pointerevents3/#implicit-pointer-capture). Les tests distinguent maintenant annulation réelle et simple changement de capture.
+- Les 14 régressions tactiles couvrent le suivi sans rendu React, la prévention du scroll horizontal, l’intention verticale, le tap simple, plusieurs doigts, l’annulation, les dernières coordonnées sans frame intermédiaire, la fin et son retour inverse depuis le bouton central, ainsi que le démontage.
+- Navigateur Chromium : un banc local ignoré dispatchant des TouchEvent et Touch réels, avec Pointer de compatibilité et pertes de capture intercalées, a parcouru 0→1→0→1→2→3→4→3→4→0 dans chaque mode. preventDefault=true pendant chaque déplacement horizontal ; transformations intermédiaires capturées, clic généré bloqué et boutons de reset fonctionnels. Ce contrôle synthétique ne remplace pas un essai matériel Safari/iPhone.
+- Contrôle séparé souris/flèche dans l’application, console sans erreur et cadre 393×852 inchangé. Traces ignorées : .tools/touch-cards-result.txt et .tools/touch-book-result.txt ; capture .tools/touch-book-393.jpg.
+- requestAnimationFrame suit la fréquence disponible et écrit uniquement les transforms/opacity des couches, sans état React par frame. Aucune mesure ni garantie matérielle de 120 images/s n’est revendiquée.
+
 ## Navigation directe et vrais états de fin
 
 - 94 tests réussis dans 14 fichiers ; build TypeScript/Vite réussi, avec validation sans .env.local.

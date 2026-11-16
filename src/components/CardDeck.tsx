@@ -57,7 +57,7 @@ export function CardDeck({ recipes, onOpen }: { recipes: Recipe[]; onOpen: (reci
             <p className="end-overline">LES BELLES CHOSES SE PARTAGENT</p>
             <h2>Fin du paquet</h2>
             <p>Toutes les recettes ont été vues</p>
-            <button className="deck-reset" data-gesture-ignore tabIndex={active ? 0 : -1} onClick={reset}>🔄 Revenir au début</button>
+            <button className="deck-reset" tabIndex={active ? 0 : -1} onClick={reset}>🔄 Revenir au début</button>
           </div>}
         </div>;
       })}

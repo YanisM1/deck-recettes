@@ -1,5 +1,17 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Urgence : reconstruction native du swipe tactile
+
+- AGENTS.md et journal relus, npm run sync exécuté : main à jour, dépendances installées. Le chantier Gemini demandé juste avant reste séparé et n’est pas inclus dans ce correctif urgent.
+- Blocage reproduit avant modification par deux tests : la séquence tactile avec perte de capture du bouton annulait le geste alors que le doigt continuait (index 0). Les glissements souris seuls ne couvraient pas cette situation.
+- Logique d’entrée réécrite : TouchEvents natifs, touchmove passive:false sur la scène, suivi d’un seul identifier, verrouillage de l’intention horizontale et preventDefault immédiat. Aucun transfert de capture Pointer. Les événements Pointer tactiles de compatibilité n’interfèrent plus avec le contact actif.
+- Souris/stylet suivent des listeners fenêtre sans capture, avec annulation réelle par pointercancel/blur. Toutes les données de glissement restent en refs, rendu DOM regroupé par RAF, index modifié une seule fois à la fin. Sens Cartes/Livre, limites, fins, reset et mouvement réduit conservés.
+- Retour depuis l’état final possible même si le geste commence sur le bouton central ; le toucher simple conserve le reset. touch-action pan-y explicite sur les boutons de lecture, sélection/appui long désactivés sur la scène.
+- 108 tests dans 15 fichiers, dont 14 régressions Touch : contacts multiples, capture enfant, flux Pointer doublés, annulations, prévention du scroll, tap, dernier mouvement avant frame, fins et retours inverses. Les deux tests qui échouaient sur l’ancien moteur passent.
+- Banc navigateur local ignoré : véritables objets Touch/TouchEvent dispatchés dans l’application, capture perdue et Pointer intercalés ; parcours 0→1→0→1→2→3→4→3→4→0 réussi dans les deux modes. preventDefault effectif, transforms intermédiaires et reset contrôlés. Traces .tools/touch-cards-result.txt et .tools/touch-book-result.txt.
+- Vérification distincte souris/flèche, application 393×852 et console sans erreur ; capture .tools/touch-book-393.jpg. Vérification synthétique en navigateur de bureau : aucun iPhone physique ni mesure 120 Hz disponible.
+- README et VERIFICATION actualisés. Checkpoint tests/build sans .env.local puis commit/push avec le message utilisateur et déploiement Vercel CLI. Aucune modification Supabase ni lecture/publication de la clé Gemini.
+
 ## 2026-11-16 — Stabilisation des Cartes, du Livre et du cadre mobile
 
 - AGENTS.md et journal lus, npm run sync exécuté : origin/main déjà à jour, dépendances installées. Aucun reset Git ni changement de données Supabase.

@@ -40,7 +40,7 @@ function BookEnd({ active, reset }: { active: boolean; reset: () => void }) {
       <BookOpenCheck size={42} strokeWidth={1.2} aria-hidden="true" />
       <h2>Fin du Livre de Recettes</h2>
       <p>Une dernière page tournée,<br />et tant de bonnes choses à refaire.</p>
-      <button type="button" className="book-restart" data-gesture-ignore
+      <button type="button" className="book-restart"
         tabIndex={active ? 0 : -1} onClick={reset}>
         📖 Revenir au début du livre
       </button>

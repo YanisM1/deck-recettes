@@ -191,14 +191,14 @@ describe.each(modes)("navigation directe — $name", mode => {
     expect(current.style.transform).toContain(mode.name === "Cartes" ? "translate3d(0, 0px, 0)" : "rotateY(0deg)");
   });
 
-  it.each(["pointercancel", "lostpointercapture"])("annule un geste avec %s sans changer de recette", eventName => {
+  it.each(["pointercancel", "blur"])("annule un geste avec %s sans changer de recette", eventName => {
     const { scene, container } = mount(mode);
     const initialPose = container.querySelector<HTMLElement>(mode.current)!.style.transform;
     down(scene);
     tick(100);
     move(scene, 180 + mode.sign * 100);
     tick(20);
-    fireEvent(scene, new TestPointerEvent(eventName, {
+    fireEvent(eventName === "blur" ? window : scene, new TestPointerEvent(eventName, {
       // Cancellation may omit coordinates entirely (0,0); preserve the last pose.
       bubbles: true, pointerId: 1,
     }));
