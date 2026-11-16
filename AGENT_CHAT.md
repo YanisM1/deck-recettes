@@ -1,5 +1,13 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Mode Livre, étape 1/3 : état et sélecteur
+
+- Base étape 6 déployée : dpl_BSHCYgWTc4117rEtoS4XDm83WZ92, READY. Endpoint widget vérifié en production : code absent rejeté.
+- Sélecteur visuel Paquet de cartes / Livre de recettes placé avant les palettes dans les réglages. Choix persisté, diffusé entre onglets, cards par défaut ; data-layout sur le cadre racine.
+- Première transformation du thème : papier clair ou sombre, typographie éditoriale et signets cousus à gauche. Filtres désactivés toujours entièrement transparents.
+- Tests du basculement par l’interface et de sa persistance ajoutés. Le composant de pages et ses animations arrivent à l’étape 2/3.
+- Le contrôle Vercel curl a créé un accès d’automatisation propre au projet pour vérifier la protection ; aucune valeur de secret publiée et protection de connexion conservée.
+
 ## 2026-11-16 — Étape 6 : widget et base applicative complète
 
 - Étape 5 déployée : dpl_Eb2aeUPxNtCZwhrL1Ksr25JBHpwf, READY.
