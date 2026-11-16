@@ -1,5 +1,12 @@
 # Vérification DeckChef — 16 novembre 2026
 
+## Marque-pages verticaux alignés aux Cartes
+
+- À 393×852, les deux modes partagent les trois rectangles (x=18, y=294,5/376,5/487,5, largeur=49, hauteur=70). Aucun déplacement à la bascule.
+- Colonne à top:50%, gap:12px et translateY(-50%) communs, séparateur compris. Les centres des SVG sont exactement identiques ; aucune rotation appliquée aux icônes.
+- Rubans verticaux avec encoche en V en bas ; le bouton conserve sa zone tactile rectangulaire entière (contrôle elementFromPoint au niveau de l’encoche).
+- Filtre désactivé : fond et remplissage SVG transparents, contour conservé et icône atténuée. Les trois actions et les filtres cumulatifs restent couverts par la suite Vitest.
+
 ## Corrections plein écran, icônes et moules
 
 - Après mise à jour : 53 tests réussis, avec contrôle final sans `.env.local`, dont ouverture/fermeture d’un carnet à une seule recette sans collision de clés React.

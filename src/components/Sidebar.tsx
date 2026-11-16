@@ -4,12 +4,12 @@ function RibbonOutline() {
   return (
     <svg
       className="ribbon-outline"
-      viewBox="0 0 68 50"
+      viewBox="0 0 49 70"
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      <path d="M1 1H67V49H1L11 25Z" />
-      <path className="ribbon-stitch" d="M60 7V43" />
+      <path className="ribbon-silhouette" d="M1 1H48V69L24.5 58L1 69Z" />
+      <path className="ribbon-stitch" d="M7 8H42" />
     </svg>
   );
 }

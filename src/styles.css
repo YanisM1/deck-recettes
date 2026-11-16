@@ -307,7 +307,7 @@
 .side-controls {
   position: absolute;
   left: 18px;
-  top: 52%;
+  top: 50%;
   transform: translateY(-50%);
   z-index: 8;
   display: flex;

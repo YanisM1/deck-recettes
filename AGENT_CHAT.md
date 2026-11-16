@@ -1,5 +1,15 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Marque-pages verticaux et placement commun aux Cartes
+
+- AGENTS.md et journal lus ; npm run sync exécuté, dépôt déjà à jour et dépendances installées.
+- Périmètre retenu : demande écrite sur les trois marque-pages ; le fichier joint décrivant un moteur d’animation est un chantier distinct, signalé dans la conversation.
+- Ruban redessiné verticalement en SVG 49×70, encoche en V en bas et couture en haut. Icônes centrées sans rotation ni marge latérale.
+- Suppression des dimensions, marges et coordonnées propres au Livre. Placement commun : left 18 px, top 50 %, translateY(-50 %), gap 12 px ; boutons 49×70 px dans les deux modes.
+- Le contour et le remplissage appartiennent au décor SVG, non à un clip-path sur le bouton : toute la zone tactile rectangulaire reste disponible.
+- Comparaison navigateur à 393×852 : rectangles exactement identiques, x=18 ; y=294,5 / 376,5 / 487,5 ; mêmes centres d’icônes, transform none. Point dans l’encoche toujours cliquable. Vérification inactive : fond et remplissage rgba(0,0,0,0), icône à 0,5 ; actions des filtres conservées.
+- Relecture indépendante en lecture seule des règles CSS et des zones de clic. Tests unitaires existants des boutons et des filtres conservés ; validation complète sans .env.local avant commit/push et déploiement CLI Vercel.
+
 ## 2026-11-16 — Contrôle final : carnet à une seule recette
 
 - Étape 3 déployée : dpl_2cNUvDjocT1cWHrAqPQtinBSVvNQ, READY.
