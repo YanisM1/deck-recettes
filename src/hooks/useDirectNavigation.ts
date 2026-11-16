@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type TransitionEvent } from "react";
 
-export const SETTLE_MS = 380;
-export const SPRING_TRANSITION = "transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.38s ease";
+export const SETTLE_MS = 300;
+export const TRANSITION_FALLBACK_MS = SETTLE_MS + 80;
+export const MOTION_TRANSITION = "transform 0.3s ease-out, opacity 0.3s ease-out";
 type Direction = -1 | 0 | 1;
 type Options = {
   maxIndex: number;
   gestureSign: 1 | -1;
-  extent: number | "width";
+  extent: number;
   paint: (dx: number, direction: Direction, animate: boolean) => void;
 };
 
@@ -21,6 +22,8 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
   const busy = useRef(false), suppressUntil = useRef(0);
   const frame = useRef<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const completeTransition = useRef<(() => void) | null>(null);
+  const transitionStarted = useRef(false);
   const painter = useRef(paint), direction = useRef<Direction>(0);
   useLayoutEffect(() => { painter.current = paint; });
   const cancelFrame = useCallback(() => {
@@ -28,7 +31,6 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
     frame.current = null;
   }, []);
   const available = useCallback((delta: Direction) => delta !== 0 && index + delta >= 0 && index + delta <= maxIndex, [index, maxIndex]);
-  const distance = useCallback(() => extent === "width" ? scene.current?.getBoundingClientRect().width || 278 : extent, [extent]);
   const setBusy = (value: boolean) => {
     busy.current = value;
     scene.current?.setAttribute("aria-busy", String(value));
@@ -36,20 +38,34 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
   const settle = useCallback((delta: Direction, from: Direction) => {
     if (busy.current) return;
     cancelFrame();
+    if (from === 0) { painter.current(0, 0, false); return; }
     const commit = available(delta);
     const complete = () => {
+      if (completeTransition.current !== complete) return;
+      completeTransition.current = null;
+      transitionStarted.current = false;
+      clearTimeout(timer.current);
+      cancelFrame();
       setBusy(false);
       direction.current = 0;
       if (commit) setIndex(value => value + delta);
       else painter.current(0, 0, false);
     };
+    completeTransition.current = complete;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { complete(); return; }
     setBusy(true);
-    // Flush the finger pose once before the spring (never during pointermove).
-    scene.current?.getBoundingClientRect();
-    painter.current(commit ? delta * gestureSign * distance() : 0, from, true);
-    timer.current = setTimeout(complete, SETTLE_MS);
-  }, [available, cancelFrame, distance, gestureSign]);
+    direction.current = from;
+    // Give the parked/finger pose a paint before CSS starts its transition.
+    // No forced layout, width measurement or ResizeObserver is needed.
+    frame.current = requestAnimationFrame(() => {
+      frame.current = requestAnimationFrame(() => {
+        frame.current = null;
+        transitionStarted.current = true;
+        painter.current(commit ? delta * gestureSign * extent : 0, from, true);
+        timer.current = setTimeout(complete, TRANSITION_FALLBACK_MS);
+      });
+    });
+  }, [available, cancelFrame, extent, gestureSign]);
   const go = useCallback((delta: -1 | 1) => {
     if (busy.current || isDragging.current || !available(delta)) return;
     painter.current(0, delta, false);
@@ -61,7 +77,7 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
     setIndex(0);
   }, []);
   useLayoutEffect(() => { painter.current(0, 0, false); }, [index]);
-  useEffect(() => () => { cancelFrame(); clearTimeout(timer.current); }, [cancelFrame]);
+  useEffect(() => () => { cancelFrame(); clearTimeout(timer.current); completeTransition.current = null; }, [cancelFrame]);
   useEffect(() => {
     const element = scene.current;
     if (!element) return;
@@ -76,6 +92,8 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
   }, [go, gestureSign]);
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || event.isPrimary === false || busy.current || isDragging.current) return;
+    // A fresh physical press is intentional, even immediately after a swipe.
+    suppressUntil.current = 0;
     if ((event.target as Element).closest("[data-gesture-ignore]")) return;
     startX.current = currentX.current = lastX.current = event.clientX;
     startY.current = event.clientY;
@@ -134,6 +152,11 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
     index, go, reset, scene, isBusy: () => busy.current,
     gestures: {
       onPointerDown, onPointerMove,
+      onTransitionEnd: (event: TransitionEvent<HTMLDivElement>) => {
+        const target = event.target as HTMLElement;
+        const movingOffset = direction.current === -1 ? "-1" : "0";
+        if (transitionStarted.current && event.propertyName === "transform" && target.dataset.motionOffset === movingOffset) completeTransition.current?.();
+      },
       onPointerUp: (event: PointerEvent<HTMLDivElement>) => endPointer(event),
       onPointerCancel: (event: PointerEvent<HTMLDivElement>) => endPointer(event, true),
       onLostPointerCapture: (event: PointerEvent<HTMLDivElement>) => endPointer(event, true),
@@ -147,6 +170,7 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
       onDragStart: (event: DragEvent) => event.preventDefault(),
       onClickCapture: (event: MouseEvent) => {
         if (event.detail !== 0 && (busy.current || Date.now() < suppressUntil.current)) {
+          suppressUntil.current = 0;
           event.preventDefault(); event.stopPropagation();
         }
       },

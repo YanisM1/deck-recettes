@@ -29,6 +29,7 @@ export default function App() {
       ?.setAttribute("content", theme.bg);
   }, [theme.bg]);
   const style = {
+    "--bg-main": theme.bg,
     "--bg": theme.bg,
     "--text": theme.text,
     "--accent-primary": theme.primary,
@@ -73,6 +74,7 @@ export default function App() {
         }
         onAdd={() => setEditing("new")}
       />
+      <div className="home-content">
       {visible.length ? (
         preferences.layoutMode === "book" ? (
           <RecipeBook
@@ -117,6 +119,7 @@ export default function App() {
           )}
         </div>
       )}
+      </div>
       {selected && (
         <RecipeReader
           key={`reader-${selected.id}`}

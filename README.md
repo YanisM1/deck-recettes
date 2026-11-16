@@ -2,7 +2,7 @@
 
 PWA personnelle de recettes en français : React, TypeScript, Vite, Tailwind, Vitest et Supabase.
 
-Les cartes et les pages suivent le doigt via des références DOM et requestAnimationFrame, puis se posent avec un ressort de 380 ms. Aucun état React n’est mis à jour pendant pointermove. En Cartes, glisser vers la droite écarte la recette et vers la gauche ramène la précédente depuis la droite. En Livre, glisser vers la gauche tourne la feuille, vers la droite la rabat depuis la reliure.
+Les cartes et les pages suivent le doigt via des références DOM et requestAnimationFrame, puis se posent avec une transition CSS de 300 ms. Les éléments et images déjà affichés sont conservés lorsqu’ils changent de place. Aucun état React ni calcul de géométrie DOM n’est utilisé pendant le glissement. En Cartes, glisser vers la droite écarte la recette et vers la gauche ramène la précédente depuis la droite. En Livre, glisser vers la gauche tourne la feuille, vers la droite la rabat depuis la reliure.
 
 Après la dernière recette, une vraie carte de fin ou une couverture intérieure cousue apparaît. Le bouton central revient au début ; le geste inverse ramène la dernière recette. Les trois boutons à gauche conservent le même emplacement dans les deux modes, avec rubans verticaux et icônes droites dans le Livre.
 

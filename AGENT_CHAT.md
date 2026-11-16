@@ -1,5 +1,19 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Stabilisation des Cartes, du Livre et du cadre mobile
+
+- AGENTS.md et journal lus, npm run sync exécuté : origin/main déjà à jour, dépendances installées. Aucun reset Git ni changement de données Supabase.
+- Causes identifiées : clés par emplacement recréant les cartes/images au changement d’index ; composants et clés différents selon le rôle des pages ; double perspective, opacité sur preserve-3d et hauteur -webkit-fill-available concurrente de 100dvh.
+- Cadre fixed/inset:0, 100vw×100dvh, flex column, overflow hidden et padding des zones sûres. Introduction et scène en flux flex avec min-height:0 ; suppression des anciennes coordonnées top/bottom de scène. Colonne latérale isolée au-dessus du contenu, mêmes formes, dimensions et coordonnées dans les deux modes.
+- Cartes et feuilles désormais indexées avec clés stables par recette. La couche suivante et son image sont promues directement, sans remplacement du DOM. Livre : même composant à tous les rôles, perspective unique et aucune opacité sur le conteneur 3D.
+- Transition CSS 300 ms ease-out, deux RAF pour présenter la pose initiale, finalisation unique par transitionend de la couche principale et délai de secours. Aucun getBoundingClientRect, offsetWidth/Height ni ResizeObserver dans la navigation. Gestes transitoires en refs et un seul changement d’index validé.
+- Défaut reproduit dans le build de production : le clic suivant un swipe du Livre pouvait rester bloqué. Un nouveau pointerdown volontaire lève maintenant la protection du clic de compatibilité ; sa régression est testée dans les deux modes.
+- Index N conservé comme vraie carte/couverture finale, avec gestes inverses, limites et boutons de retour à zéro. Sélection de texte désactivée sur le Livre pendant le geste ; couverture compacte ajustée pour l’écran court.
+- Build de production local sans .env : swipes natifs avant/arrière, fins, retours inverses, resets et enchaînement swipe/retour/clic immédiat vérifiés. À 393×852, cadre exact 0,0,393,852, paddings 59/34 et boutons x18,y294,5/376,5/487,5 en 49×70. À 393×680, aucun débordement ni chevauchement introduction/couverture/navigation. Thèmes Chef Crème/OLED inspectés ; console de production sans erreur.
+- 94 tests dans 14 fichiers : identité DOM/images conservée, absence de mesures de layout, événements de transition enfants/prématurés/doubles ignorés, délai de secours et clic physique après swipe. Tests et build validés sans .env.local avant commit/push/déploiement CLI Vercel.
+- Audit PWA en lecture seule : cache versionné cohérent, aucune modification du service worker nécessaire. Un fichier local gemini-key.txt apparu pendant l’intervention a été exclu de Git et Vercel sans lecture ni modification de son contenu.
+- README et VERIFICATION mis à jour. Captures QA ignorées : .tools/cards-stable-393.jpg et .tools/book-stable-393.jpg. Contrôles sur navigateur de bureau, aucun essai Safari/iPhone physique revendiqué.
+
 ## 2026-11-16 — Gestes directs, étape 3/3 : Régressions et validation finale
 
 - Étape 2 publiée : commit 2d094e0, déploiement dpl_GPaCAZjgfwkrHFgmotwG642PzG4v, READY. Production contrôlée par vercel curl : HTTP 200, titre DeckChef, protection conservée.

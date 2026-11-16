@@ -4,7 +4,7 @@ import { Profiler } from "react";
 import { CardDeck } from "./CardDeck";
 import { RecipeBook } from "./RecipeBook";
 import { starterRecipes } from "../data/recipes";
-import { SETTLE_MS, SPRING_TRANSITION } from "../hooks/useDirectNavigation";
+import { SETTLE_MS, TRANSITION_FALLBACK_MS, MOTION_TRANSITION } from "../hooks/useDirectNavigation";
 
 class TestPointerEvent extends MouseEvent {
   readonly pointerId: number;
@@ -42,6 +42,13 @@ afterEach(() => {
 });
 
 const tick = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
+const startTransition = () => tick(32);
+const finishTransition = () => { startTransition(); tick(TRANSITION_FALLBACK_MS); };
+function transitionEnd(element: Element, propertyName = "transform") {
+  const event = new Event("transitionend", { bubbles: true });
+  Object.defineProperty(event, "propertyName", { value: propertyName });
+  fireEvent(element, event);
+}
 const down = (scene: Element, x = 180, pointerId = 1, isPrimary = true) =>
   fireEvent.pointerDown(scene, { clientX: x, clientY: 300, button: 0, pointerId, isPrimary });
 const move = (scene: Element, x: number, y = 300, pointerId = 1) =>
@@ -84,7 +91,7 @@ describe.each(modes)("navigation directe — $name", mode => {
       }
       fireEvent.click(screen.getByRole("button", { name: mode.next }));
       expect(scene).toHaveAttribute("data-active-index", String(i));
-      tick(SETTLE_MS);
+      finishTransition();
     }
     expect(scene).toHaveAttribute("data-active-index", String(count));
     expect(screen.getByRole("heading", { name: mode.heading })).toBeInTheDocument();
@@ -100,7 +107,7 @@ describe.each(modes)("navigation directe — $name", mode => {
 
     // There is no forward item after the real endpoint, including by swipe.
     drag(scene, mode.sign * 100);
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", String(count));
 
     // The last recipe returns physically over the endpoint.
@@ -109,21 +116,23 @@ describe.each(modes)("navigation directe — $name", mode => {
     move(scene, 180 - mode.sign * 100);
     tick(20);
     const previous = container.querySelector<HTMLElement>(mode.previousLayer)!;
-    expect(previous.style.opacity).toBe("1");
     if (mode.name === "Cartes") {
-      expect(previous.style.transform).toContain("translate3d(320px,");
+      expect(previous.style.opacity).toBe("1");
+      expect(previous.style.transform).toContain("translate3d(calc(150% - 100px),");
       expect(container.querySelector<HTMLElement>(mode.current)!.style.transform).toContain("translate3d(0, 0px, 0)");
     } else {
+      expect(previous.style.visibility).toBe("visible");
+      expect(previous.style.opacity).toBe("");
       const angle = Number(previous.style.transform.match(/rotateY\(([-\d.]+)deg\)/)?.[1]);
-      expect(angle).toBeCloseTo(-180 + 100 / 278 * 180);
+      expect(angle).toBeCloseTo(-180 + 100 / 240 * 180);
     }
     up(scene, 180 - mode.sign * 100);
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", String(count - 1));
     expect(screen.getByRole("button", { name: `Lire ${starterRecipes[count - 1].title}` })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: mode.next }));
-    tick(SETTLE_MS);
+    finishTransition();
     fireEvent.click(screen.getByRole("button", { name: mode.reset }));
     expect(scene).toHaveAttribute("data-active-index", "0");
     expect(screen.getByRole("button", { name: `Lire ${starterRecipes[0].title}` })).toBeInTheDocument();
@@ -144,12 +153,13 @@ describe.each(modes)("navigation directe — $name", mode => {
     if (mode.name === "Cartes") expect(current.style.transform).toContain("translate3d(100px, 4px, 0)");
     else {
       const angle = Number(current.style.transform.match(/rotateY\(([-\d.]+)deg\)/)?.[1]);
-      expect(angle).toBeCloseTo(-100 / 278 * 180);
+      expect(angle).toBeCloseTo(-100 / 240 * 180);
     }
     expect(commits).toHaveBeenCalledTimes(baseline);
     expect(scene).toHaveAttribute("data-active-index", "0");
     up(scene, 180 + mode.sign * 100);
-    expect(current.style.transition).toBe(SPRING_TRANSITION);
+    startTransition();
+    expect(current.style.transition).toBe(MOTION_TRANSITION);
     expect(commits).toHaveBeenCalledTimes(baseline);
     expect(scene).toHaveAttribute("aria-busy", "true");
     // A generated compatibility click must not open the recipe after a drag.
@@ -158,6 +168,7 @@ describe.each(modes)("navigation directe — $name", mode => {
     tick(SETTLE_MS - 1);
     expect(scene).toHaveAttribute("data-active-index", "0");
     tick(1);
+    transitionEnd(current);
     expect(scene).toHaveAttribute("data-active-index", "1");
     expect(scene).toHaveAttribute("aria-busy", "false");
     expect(commits).toHaveBeenCalledTimes(baseline + 1);
@@ -173,7 +184,7 @@ describe.each(modes)("navigation directe — $name", mode => {
     const { scene, container, commits } = mount(mode);
     const baseline = commits.mock.calls.length;
     drag(scene, mode.sign * distance, movementMs, holdMs);
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", expected);
     expect(commits).toHaveBeenCalledTimes(baseline + Number(expected));
     const current = container.querySelector<HTMLElement>(mode.current)!;
@@ -192,8 +203,9 @@ describe.each(modes)("navigation directe — $name", mode => {
       bubbles: true, pointerId: 1,
     }));
     const cancelling = container.querySelector<HTMLElement>(mode.current)!;
-    expect(cancelling.style.transition).toBe(SPRING_TRANSITION);
-    tick(SETTLE_MS);
+    startTransition();
+    expect(cancelling.style.transition).toBe(MOTION_TRANSITION);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", "0");
     expect(container.querySelector<HTMLElement>(mode.current)!.style.transform).toBe(initialPose);
     expect(scene).toHaveAttribute("aria-busy", "false");
@@ -206,7 +218,7 @@ describe.each(modes)("navigation directe — $name", mode => {
     down(scene, 180, 2, false);
     move(scene, 180 + mode.sign * 100, 300, 2);
     up(scene, 180 + mode.sign * 100, 300, 2);
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", "0");
     expect(current.style.transform).toBe(initialPose);
 
@@ -221,7 +233,7 @@ describe.each(modes)("navigation directe — $name", mode => {
     move(scene, 180 + mode.sign * 100, 300, 1);
     tick(20);
     up(scene, 180 + mode.sign * 100, 300, 1);
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", "1");
   });
 
@@ -237,7 +249,7 @@ describe.each(modes)("navigation directe — $name", mode => {
     tick(20);
     up(scene, 180 + mode.sign * 120, 400);
     fireEvent.wheel(scene, { deltaX: 0, deltaY: 150 });
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", "0");
     expect(current.style.transform).toBe(initialPose);
     expect(commits).toHaveBeenCalledTimes(baseline);
@@ -249,15 +261,15 @@ describe.each(modes)("navigation directe — $name", mode => {
     fireEvent.click(screen.getByRole("button", { name: mode.next }));
     fireEvent.wheel(scene, { deltaX: mode.sign * 90, deltaY: 0 });
     fireEvent.keyDown(scene, { key: "ArrowRight" });
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", "1");
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", "1");
     fireEvent.keyDown(scene, { key: "ArrowLeft" });
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", "0");
     fireEvent.wheel(scene, { deltaX: mode.sign * 90, deltaY: 0 });
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", "1");
   });
 
@@ -282,8 +294,97 @@ describe.each(modes)("navigation directe — $name", mode => {
     down(scene);
     fireEvent.pointerLeave(scene, { pointerId: 1 });
     fireEvent.click(screen.getByRole("button", { name: mode.next }));
-    tick(SETTLE_MS);
+    finishTransition();
     expect(scene).toHaveAttribute("data-active-index", "1");
+  });
+
+  it("conserve les mêmes cartes/pages et images lorsqu’elles changent de rôle", () => {
+    const { scene, container } = mount(mode);
+    const first = container.querySelector<HTMLElement>(`[data-recipe-id="${starterRecipes[0].id}"]`)!;
+    const second = container.querySelector<HTMLElement>(`[data-recipe-id="${starterRecipes[1].id}"]`)!;
+    const firstImage = first.querySelector("img"), secondImage = second.querySelector("img");
+    expect(firstImage).not.toBeNull();
+    expect(secondImage).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: mode.next }));
+    startTransition();
+    transitionEnd(first);
+    expect(scene).toHaveAttribute("data-active-index", "1");
+    expect(container.querySelector(mode.current)).toBe(second);
+    expect(second.querySelector("img")).toBe(secondImage);
+    expect(container.querySelector(mode.previousLayer)).toBe(first);
+    expect(first.querySelector("img")).toBe(firstImage);
+
+    fireEvent.click(screen.getByRole("button", { name: mode.previous }));
+    startTransition();
+    if (mode.name === "Livre") {
+      expect(first.style.opacity).toBe("");
+      expect(second.style.opacity).toBe("");
+    }
+    transitionEnd(first);
+    expect(scene).toHaveAttribute("data-active-index", "0");
+    expect(container.querySelector(mode.current)).toBe(first);
+    expect(first.querySelector("img")).toBe(firstImage);
+    expect(second.querySelector("img")).toBe(secondImage);
+  });
+
+  it("termine sur la transition principale une seule fois et ignore les transitions enfants", () => {
+    const { scene, container, commits } = mount(mode);
+    const current = container.querySelector<HTMLElement>(mode.current)!;
+    const baseline = commits.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: mode.next }));
+    // A late event from an older motion must not finish this one before CSS starts.
+    transitionEnd(current);
+    expect(scene).toHaveAttribute("data-active-index", "0");
+    startTransition();
+    transitionEnd(current.querySelector("img")!);
+    transitionEnd(current, "opacity");
+    transitionEnd(container.querySelector('[data-motion-offset="1"]')!);
+    expect(scene).toHaveAttribute("data-active-index", "0");
+    transitionEnd(current);
+    expect(scene).toHaveAttribute("data-active-index", "1");
+    transitionEnd(current);
+    tick(TRANSITION_FALLBACK_MS * 2);
+    expect(scene).toHaveAttribute("data-active-index", "1");
+    expect(commits).toHaveBeenCalledTimes(baseline + 1);
+  });
+
+  it("utilise le délai de secours si le navigateur ne transmet pas transitionend", () => {
+    const { scene } = mount(mode);
+    fireEvent.click(screen.getByRole("button", { name: mode.next }));
+    startTransition();
+    tick(TRANSITION_FALLBACK_MS - 1);
+    expect(scene).toHaveAttribute("data-active-index", "0");
+    tick(1);
+    expect(scene).toHaveAttribute("data-active-index", "1");
+  });
+
+  it("accepte un nouveau toucher volontaire immédiatement après un swipe terminé", () => {
+    const { scene, container } = mount(mode);
+    drag(scene, mode.sign * 100);
+    startTransition();
+    tick(SETTLE_MS);
+    transitionEnd(container.querySelector(mode.current)!);
+    expect(scene).toHaveAttribute("data-active-index", "1");
+    const next = screen.getByRole("button", { name: mode.next });
+    // Real clicks have detail=1 and a fresh pointerdown, unlike fireEvent.click defaults.
+    fireEvent.pointerDown(next, { clientX: 330, clientY: 690, button: 0, pointerId: 1 });
+    fireEvent.pointerUp(next, { clientX: 330, clientY: 690, button: 0, pointerId: 1 });
+    fireEvent.click(next, { detail: 1 });
+    finishTransition();
+    expect(scene).toHaveAttribute("data-active-index", "2");
+  });
+
+  it("ne mesure pas le DOM pendant le glissement ni le relâchement", () => {
+    const { scene } = mount(mode);
+    const bounds = vi.spyOn(Element.prototype, "getBoundingClientRect");
+    const width = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get");
+    const height = vi.spyOn(HTMLElement.prototype, "offsetHeight", "get");
+    drag(scene, mode.sign * 100);
+    finishTransition();
+    expect(scene).toHaveAttribute("data-active-index", "1");
+    expect(bounds).not.toHaveBeenCalled();
+    expect(width).not.toHaveBeenCalled();
+    expect(height).not.toHaveBeenCalled();
   });
 
   it("respecte le mouvement réduit et permet le tap clavier de la recette", () => {

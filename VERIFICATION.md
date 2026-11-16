@@ -2,14 +2,16 @@
 
 ## Navigation directe et vrais états de fin
 
-- 84 tests réussis dans 14 fichiers ; build TypeScript/Vite réussi, avec validation sans .env.local à chaque étape.
+- 94 tests réussis dans 14 fichiers ; build TypeScript/Vite réussi, avec validation sans .env.local.
 
-- Les deux vues utilisent useDirectNavigation : startX/currentX/isDragging/lastX/velocityX en refs, écritures DOM regroupées par requestAnimationFrame, une seule mise à jour de l’index après le ressort de 380 ms. Les tests React Profiler mesurent zéro commit pendant le déplacement et un seul à la validation.
-- Cartes : transform translate3d(dx,abs(dx)×0,04,0) et rotate3d de dx×0,05 degrés ; carte suivante agrandie en temps réel. Au retour, la précédente rentre de +420 px et la courante reste centrée.
-- Livre : perspective 1800 px, rotation autour de la reliure gauche ; recto/verso et ombre dynamique. Les mouvements animent uniquement transform et opacity, sans lecture de layout pendant pointermove.
+- Les deux vues utilisent useDirectNavigation : geste en refs et écritures regroupées par requestAnimationFrame. Transition CSS ease-out de 300 ms, finalisation unique sur transitionend de la couche principale, délai de secours si cet événement manque. Les tests Profiler mesurent zéro commit pendant le déplacement et un seul à la validation.
+- Clés stables par recette et couche Livre identique quel que soit son rôle : les tests conservent l’identité des nœuds et des images au passage suivant/précédent. Deux frames séparent la pose initiale du démarrage CSS, sans mesure forcée du DOM ni ResizeObserver.
+- Cartes : suivi direct de dx, sortie à 150 % de la largeur ; la suivante grandit et la précédente revient depuis la droite. Livre : une seule perspective 1800 px et rotateY autour de la reliure ; aucune opacité sur le conteneur preserve-3d.
+- Cadre fixed/inset:0, 100vw×100dvh, flex column et padding des zones sûres. La scène occupe l’espace restant avec min-height:0. À 393×852 : cadre 0,0,393,852, paddings 59/34 px, boutons inchangés. À 393×680 : aucun débordement ni chevauchement de la couverture avec l’introduction ; remise à zéro au-dessus des coins de navigation.
+- Défaut reproduit puis corrigé : un clic réel immédiatement après swipe pouvait être bloqué par la protection du clic généré. Un nouveau pointerdown intentionnel lève cette protection ; régression couverte dans les deux modes. Sélection de texte désactivée sur le Livre pendant le geste.
 - Fins réelles à l’index N, placées sous la dernière recette : carte thémée ou couverture cousue sans feuille/tranche papier. Avance interdite à N, retour inverse vers N−1 et bouton de remise à zéro. Tests avec 1 et 4 recettes dans les deux modes.
 - Seuils stricts >65 px ou >0,35 px/ms, petit geste lent annulé, flick rapide accepté, vitesse ancienne abandonnée après pause. Annulation sans coordonnées, capture perdue, pointeur secondaire, intention verticale, doubles commandes, molette/clavier, mouvement réduit et démontage couverts.
-- Navigateur 393×852 : gestes natifs avant/arrière dans les deux modes ; fins, retours inverses et remises à zéro confirmés. Couverture en Chef Crème et OLED Black & Gold inspectée, aucun débordement horizontal ni erreur console. Rectangles des boutons identiques aux coordonnées ci-dessous.
+- Build de production local sans environnement cloud : gestes natifs avant/arrière dans les deux modes ; fins, retours inverses et remises à zéro confirmés. Séquence swipe/retour/clic immédiat rejouée avec succès. Couverture en Chef Crème et OLED Black & Gold inspectée ; aucun débordement horizontal ni erreur console. Rectangles des boutons identiques aux coordonnées ci-dessous.
 - Validation complète sans .env.local à chacune des trois publications. Limite : navigateur de bureau au viewport demandé ; ni mesure 120 Hz ni essai Safari sur iPhone physique. Aucun changement de données Supabase pendant ce chantier.
 
 ## Marque-pages verticaux alignés aux Cartes

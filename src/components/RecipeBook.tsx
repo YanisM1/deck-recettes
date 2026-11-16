@@ -1,9 +1,9 @@
 import { ArrowLeft, ArrowRight, BookOpenCheck, MoveHorizontal } from "lucide-react";
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useRef, type Ref } from "react";
 import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
-import { SPRING_TRANSITION, useDirectNavigation } from "../hooks/useDirectNavigation";
+import { MOTION_TRANSITION, useDirectNavigation } from "../hooks/useDirectNavigation";
 
 function BookPage({ recipe }: { recipe: Recipe }) {
   return (
@@ -49,16 +49,18 @@ function BookEnd({ active, reset }: { active: boolean; reset: () => void }) {
   );
 }
 
-function RecipeLeaf({ recipe, active, leafRef, role, onOpen }: {
+function RecipeLeaf({ recipe, active, leafRef, offset, onOpen }: {
   recipe: Recipe;
   active: boolean;
-  leafRef: RefObject<HTMLDivElement | null>;
-  role: "current" | "previous";
+  leafRef: Ref<HTMLDivElement>;
+  offset: number;
   onOpen: () => void;
 }) {
   return (
-    <div ref={leafRef} className={`book-turn-leaf book-${role}-leaf`}
-      data-book-layer={role} aria-hidden={!active} inert={!active}>
+    <div ref={leafRef} className="book-turn-leaf"
+      data-book-layer={offset === 0 ? "current" : offset < 0 ? "previous" : "next"}
+      data-motion-offset={offset} data-recipe-id={recipe.id}
+      style={{ zIndex: offset < 0 ? 5 : 3 - offset }} aria-hidden={!active} inert={!active}>
       <div className="book-face book-face-front book-paper">
         <button className="book-open" aria-label={`Lire ${recipe.title}`}
           tabIndex={active ? 0 : -1} onClick={onOpen}>
@@ -76,26 +78,21 @@ export function RecipeBook({ recipes, onOpen }: {
   recipes: Recipe[];
   onOpen: (recipe: Recipe) => void;
 }) {
-  const currentPage = useRef<HTMLDivElement>(null);
-  const previousPage = useRef<HTMLDivElement>(null);
+  const layers = useRef(new Map<number, HTMLDivElement>());
   const pageShadow = useRef<HTMLDivElement>(null);
-  const pageWidth = useRef(278);
   const { index, go, reset, scene, gestures, isBusy } = useDirectNavigation({
     maxIndex: recipes.length,
     gestureSign: -1,
-    extent: "width",
+    extent: 240,
     paint: (dx, direction, animate) => {
-      const p = Math.max(0, Math.min(1, Math.abs(dx) / pageWidth.current));
-      const transition = animate ? SPRING_TRANSITION : "none";
-      if (currentPage.current) {
-        currentPage.current.style.transition = transition;
-        currentPage.current.style.transform = `perspective(1800px) rotateY(${direction === 1 ? -p * 180 : 0}deg)`;
-      }
-      if (previousPage.current) {
-        previousPage.current.style.transition = transition;
-        previousPage.current.style.transform = `perspective(1800px) rotateY(${direction === -1 ? -180 + p * 180 : -180}deg)`;
-        previousPage.current.style.opacity = direction === -1 && (!animate || p > 0) ? "1" : "0";
-      }
+      const p = Math.min(1, Math.abs(dx) / 240);
+      const transition = animate ? MOTION_TRANSITION : "none";
+      layers.current.forEach((element, itemIndex) => {
+        const offset = itemIndex - index;
+        element.style.transition = transition;
+        element.style.visibility = offset < 0 && direction !== -1 ? "hidden" : "visible";
+        element.style.transform = `rotateY(${offset < 0 ? -180 + (direction === -1 ? p * 180 : 0) : offset === 0 && direction === 1 ? -p * 180 : 0}deg)`;
+      });
       if (pageShadow.current) {
         pageShadow.current.style.transition = transition;
         pageShadow.current.style.opacity = direction === 0 ? "0" : String(Math.sin(p * Math.PI) * 0.55);
@@ -103,20 +100,8 @@ export function RecipeBook({ recipes, onOpen }: {
       }
     },
   });
-  useLayoutEffect(() => {
-    const element = scene.current;
-    if (!element) return;
-    const measure = () => { pageWidth.current = element.getBoundingClientRect().width || 278; };
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [scene]);
   const atEnd = index === recipes.length;
-  const current = recipes[index];
-  const previous = recipes[index - 1];
-  const next = recipes[index + 1];
+  const offsets = [-1, 0, 1].filter(offset => index + offset >= 0 && index + offset <= recipes.length);
 
   return (
     <>
@@ -124,15 +109,16 @@ export function RecipeBook({ recipes, onOpen }: {
         {...gestures} aria-label="Livre de recettes" data-active-index={index}>
         <div className="book-cover" aria-hidden="true" />
         {index < recipes.length - 1 && <div className="book-page-stack" aria-hidden="true" />}
-        {!atEnd && <div className="book-underneath" data-book-layer="next" aria-hidden="true" inert>
-          {next ? <div className="book-paper"><BookPage recipe={next} /></div> : <BookEnd active={false} reset={reset} />}
-        </div>}
-        {current ? <RecipeLeaf key={`current-${current.id}`} recipe={current}
-          active leafRef={currentPage} role="current"
-          onOpen={() => { if (!isBusy()) onOpen(current); }} /> :
-          <div className="book-end-layer" data-book-layer="current"><BookEnd active reset={reset} /></div>}
-        {previous && <RecipeLeaf key={`previous-${previous.id}`} recipe={previous}
-          active={false} leafRef={previousPage} role="previous" onOpen={() => {}} />}
+        {offsets.map(offset => {
+          const itemIndex = index + offset, recipe = recipes[itemIndex], active = offset === 0;
+          return recipe ? <RecipeLeaf key={recipe.id} recipe={recipe} active={active} offset={offset}
+            leafRef={element => { if (element) layers.current.set(itemIndex, element); else layers.current.delete(itemIndex); }}
+            onOpen={() => { if (active && !isBusy()) onOpen(recipe); }} /> :
+            <div key="book-end" className="book-end-layer" data-book-layer={active ? "current" : "next"}
+              aria-hidden={!active} inert={!active} style={{ zIndex: active ? 3 : 1 }}>
+              <BookEnd active={active} reset={reset} />
+            </div>;
+        })}
         <div ref={pageShadow} className="book-turn-shadow" aria-hidden="true" />
         <div className="book-binding" aria-hidden="true"><span /></div>
         <div className="book-page-navigation" data-gesture-ignore>

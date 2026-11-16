@@ -3,7 +3,7 @@ import { useRef } from "react";
 import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
-import { SPRING_TRANSITION, useDirectNavigation } from "../hooks/useDirectNavigation";
+import { MOTION_TRANSITION, useDirectNavigation } from "../hooks/useDirectNavigation";
 
 const stackTransform = (depth: number) => `translate3d(0, ${depth * 7}px, 0) rotate3d(0, 0, 1, ${depth * 2}deg) scale3d(${1 - depth * 0.025}, ${1 - depth * 0.025}, 1)`;
 const movingTransform = (x: number, y = Math.abs(x) * 0.04, angle = x * 0.05) => `translate3d(${x}px, ${y}px, 0) rotate3d(0, 0, 1, ${angle}deg) scale3d(1, 1, 1)`;
@@ -14,15 +14,16 @@ export function CardDeck({ recipes, onOpen }: { recipes: Recipe[]; onOpen: (reci
     maxIndex: recipes.length, gestureSign: 1, extent: 420,
     paint: (dx, direction, animate) => {
       const progress = Math.min(1, Math.abs(dx) / 420);
-      layers.current.forEach((element, offset) => {
-        element.style.transition = animate ? SPRING_TRANSITION : "none";
+      layers.current.forEach((element, itemIndex) => {
+        const offset = itemIndex - index;
+        element.style.transition = animate ? MOTION_TRANSITION : "none";
         if (offset === -1) {
           const x = direction === -1 ? Math.max(0, 420 + dx) : 420;
-          element.style.transform = movingTransform(x, x / 420 * 20, x / 420 * 14);
+          element.style.transform = animate && direction === -1 && dx !== 0 ? movingTransform(0) : `translate3d(calc(150% - ${420 - x}px), ${x / 420 * 20}px, 0) rotate3d(0, 0, 1, ${x / 420 * 14}deg)`;
           element.style.opacity = direction === -1 ? "1" : "0";
         } else if (offset === 0) {
           element.style.transform = direction === 1
-            ? movingTransform(dx, animate && dx !== 0 ? 20 : undefined, animate && dx !== 0 ? 14 : undefined)
+            ? animate && dx !== 0 ? "translate3d(150%, 20px, 0) rotate3d(0, 0, 1, 14deg)" : movingTransform(dx)
             : stackTransform(0);
           element.style.opacity = "1";
         } else {
@@ -37,9 +38,9 @@ export function CardDeck({ recipes, onOpen }: { recipes: Recipe[]; onOpen: (reci
     <div className="deck-scene" ref={scene} {...gestures} aria-label="Paquet de recettes" data-active-index={index}>
       {offsets.map(offset => {
         const itemIndex = index + offset, recipe = recipes[itemIndex], active = offset === 0;
-        return <div key={offset} ref={element => { if (element) layers.current.set(offset, element); else layers.current.delete(offset); }}
+        return <div key={recipe?.id ?? "deck-end"} ref={element => { if (element) layers.current.set(itemIndex, element); else layers.current.delete(itemIndex); }}
           className={`recipe-card card-depth-${offset}${recipe ? "" : " deck-end-card"}`}
-          data-layer={offset} aria-hidden={!active} inert={!active}
+          data-layer={offset} data-motion-offset={offset} data-recipe-id={recipe?.id} aria-hidden={!active} inert={!active}
           style={{ zIndex: offset === -1 ? 6 : 5 - offset }}>
           {recipe ? <button className="card-open-area" tabIndex={active ? 0 : -1} aria-label={`Lire ${recipe.title}`} onClick={() => { if (!isBusy()) onOpen(recipe); }}>
             <RecipeImage key={recipe.image_url} src={recipe.image_url} alt={recipe.title} className="card-photo" />

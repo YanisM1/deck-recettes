@@ -97,13 +97,13 @@
   --paper-edge: color-mix(in srgb, var(--bg), var(--text) 26%);
 }
 .book-scene {
-  position: absolute;
-  left: 89px;
-  right: 26px;
-  top: calc(var(--safe-top) + 157px);
-  bottom: calc(var(--safe-bottom) + 99px);
+  position: relative;
+  flex: 1;
+  min-height: 0;
   perspective: 1800px;
   touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .book-cover {
   position: absolute;
@@ -324,12 +324,10 @@
   );
 }
 .book-footer {
-  position: absolute;
-  left: 89px;
-  right: 26px;
-  bottom: calc(var(--safe-bottom) + 45px);
+  position: relative;
+  flex: 0 0 99px;
+  padding-top: 28px;
 }
-.book-underneath,
 .book-end-layer {
   position: absolute;
   inset: 0;
@@ -341,13 +339,13 @@
   z-index: 3;
   transform-origin: left center;
   transform-style: preserve-3d;
-  transform: perspective(1800px) rotateY(0deg);
-  will-change: transform, opacity;
+  transform: rotateY(0deg);
+  will-change: transform;
 }
-.book-previous-leaf {
+.book-turn-leaf[data-motion-offset="-1"] {
   z-index: 5;
-  transform: perspective(1800px) rotateY(-180deg);
-  opacity: 0;
+  transform: rotateY(-180deg);
+  visibility: hidden;
   pointer-events: none;
 }
 .book-face {
@@ -500,9 +498,15 @@
   border-top-color: var(--paper-rule);
 }
 @media (max-height: 740px) {
-  .book-scene {
-    top: calc(var(--safe-top) + 130px);
-    bottom: calc(var(--safe-bottom) + 80px);
+  .book-end-cover {
+    padding: 20px 20px 50px 27px;
+    gap: 12px;
+  }
+  .book-end-cover h2 {
+    font-size: 26px;
+  }
+  .book-end-ornament {
+    display: none;
   }
   .book-photo-frame {
     margin-bottom: 12px;
@@ -519,7 +523,8 @@
     display: none;
   }
   .book-footer {
-    bottom: calc(var(--safe-bottom) + 30px);
+    flex-basis: 80px;
+    padding-top: 15px;
   }
 }
 

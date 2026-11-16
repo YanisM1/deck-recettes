@@ -10,3 +10,4 @@ test-results/
 .tools/
 *.tsbuildinfo
 supabase/.temp/
+gemini-key.txt
