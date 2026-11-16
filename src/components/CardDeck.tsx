@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, MoveHorizontal } from "lucide-react";
 import type { CSSProperties } from "react";
 import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
+import { PanBadge } from "./PanBadge";
 import { useDeckNavigation } from "../hooks/useDeckNavigation";
 export function CardDeck({
   recipes,
@@ -57,6 +58,7 @@ export function CardDeck({
               <span className="category-badge">
                 {recipe.category === "sale" ? "SALÉ" : "SUCRÉ"}
               </span>
+              <PanBadge recipe={recipe} className="card-pan-badge" />
               <span className="card-number">
                 {String(index + 1).padStart(2, "0")}
               </span>

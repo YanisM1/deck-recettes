@@ -1,4 +1,5 @@
 import type { Recipe, RecipeInput } from "../types";
+import { cakeFields } from "../types";
 import { starterRecipes } from "../data/recipes";
 export type Operation =
   | { type: "save"; recipe: Recipe }
@@ -197,6 +198,7 @@ export class RecipeStore {
     const now = new Date().toISOString(),
       recipe: Recipe = {
         ...input,
+        ...cakeFields(input),
         title,
         ingredients,
         steps,

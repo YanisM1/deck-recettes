@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, MoveHorizontal } from "lucide-react";
 import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
+import { PanBadge } from "./PanBadge";
 import { useDeckNavigation } from "../hooks/useDeckNavigation";
 function BookPage({ recipe }: { recipe: Recipe }) {
   return (
@@ -14,9 +15,12 @@ function BookPage({ recipe }: { recipe: Recipe }) {
         />
       </div>
       <h2 className="book-title">{recipe.title}</h2>
-      <p className="book-category">
-        {recipe.category === "sale" ? "Du côté salé" : "Pour la douceur"}
-      </p>
+      <div className="book-meta">
+        <p className="book-category">
+          {recipe.category === "sale" ? "Du côté salé" : "Pour la douceur"}
+        </p>
+        <PanBadge recipe={recipe} className="book-pan-badge" />
+      </div>
       <div className="book-flourish" aria-hidden="true">
         <span>✳</span>
       </div>

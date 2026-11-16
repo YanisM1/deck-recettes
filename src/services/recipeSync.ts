@@ -4,9 +4,13 @@ import {
   type RealtimeChannel,
   type SupabaseClient,
 } from "@supabase/supabase-js";
-import { RecipeStore, isRecipe, type RemoteRecipes } from "./recipeStore";
-import type { Recipe } from "../types";
-type RecipeRow = { [Key in keyof Recipe]: Recipe[Key] } & { sync_key: string };
+import { RecipeStore, type RemoteRecipes } from "./recipeStore";
+import {
+  readCompatible,
+  saveCompatible,
+  toRecipeRow,
+  type RecipeRow,
+} from "./recipeFields";
 type Database = {
   public: {
     Tables: {
@@ -20,7 +24,7 @@ type Database = {
     Views: {};
     Functions: {
       deckchef_initialize: {
-        Args: { p_key: string; p_recipes: Recipe[] };
+        Args: { p_key: string; p_recipes: RecipeRow[] };
         Returns: undefined;
       };
     };
@@ -90,27 +94,23 @@ export function createRemote(key: string): RemoteRecipes | null {
     async initialize(recipes) {
       const { error } = await client.rpc("deckchef_initialize", {
         p_key: key,
-        p_recipes: recipes,
+        p_recipes: recipes.map((recipe) => toRecipeRow(recipe, key)),
       });
       check(error);
     },
     async fetch() {
-      const { data, error } = await client
-        .from("recipes")
-        .select(
-          "id,title,category,ingredients,steps,image_url,created_at,updated_at",
-        )
-        .order("created_at", { ascending: true })
-        .order("id");
-      check(error);
-      if (!data?.every(isRecipe)) throw new Error("Réponse invalide");
-      return data as Recipe[];
+      return readCompatible((columns) =>
+        client
+          .from("recipes")
+          .select(columns)
+          .order("created_at", { ascending: true })
+          .order("id"),
+      );
     },
     async save(recipe) {
-      const { error } = await client
-        .from("recipes")
-        .upsert({ ...recipe, sync_key: key }, { onConflict: "sync_key,id" });
-      check(error);
+      return saveCompatible(recipe, key, (row) =>
+        client.from("recipes").upsert(row, { onConflict: "sync_key,id" }),
+      );
     },
     async remove(id) {
       const { error } = await client

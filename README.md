@@ -2,6 +2,10 @@
 
 PWA personnelle de recettes en français : React, TypeScript, Vite, Tailwind, Vitest et Supabase.
 
+Dernières améliorations : plein écran mobile fixé aux quatre bords avec fond du thème jusque sous la zone d’accueil ; gestes du Livre inversés (gauche = page suivante, droite = précédente) ; filtres à icônes pizza/gâteau sur mini-cartes ou rubans à encoche. Le mode Cartes conserve son sens de navigation.
+
+Le formulaire propose « C’est un gâteau / moule » dans les deux catégories, puis 20, 26 ou 28 cm. Un badge « Moule 26 cm » apparaît sur carte, page et lecteur. Ces informations sont conservées localement et synchronisées dans `is_cake` / `pan_size`. Une ancienne base sans ces colonnes reste lisible : les recettes ordinaires se synchronisent, les informations de moule restent dans la file locale jusqu’à la migration.
+
 ## Application
 
 - Production : https://deck-recettes.vercel.app

@@ -8,7 +8,14 @@ import {
   Minus,
   Check,
 } from "lucide-react";
-import type { Category, Recipe, RecipeInput } from "../types";
+import {
+  PAN_SIZES,
+  isPanSize,
+  type PanSize,
+  type Category,
+  type Recipe,
+  type RecipeInput,
+} from "../types";
 import { Modal } from "./Modal";
 import { RecipeImage } from "./RecipeImage";
 import { compressImage } from "../services/imageCompression";
@@ -109,6 +116,12 @@ export function RecipeForm({
   const [step, setStep] = useState(0),
     [title, setTitle] = useState(recipe?.title || ""),
     [category, setCategory] = useState<Category>(recipe?.category || "sale"),
+    [isCake, setIsCake] = useState(
+      recipe?.isCake === true || isPanSize(recipe?.panSize),
+    ),
+    [panSize, setPanSize] = useState<PanSize>(
+      isPanSize(recipe?.panSize) ? recipe.panSize : 26,
+    ),
     [ingredients, setIngredients] = useState(() =>
       makeLines(recipe?.ingredients || []),
     ),
@@ -164,6 +177,8 @@ export function RecipeForm({
           ingredients: ingredients.map((v) => v.value),
           steps: steps.map((v) => v.value),
           image_url: image,
+          isCake,
+          panSize: isCake ? panSize : undefined,
         },
         recipe?.id,
       );
@@ -222,6 +237,33 @@ export function RecipeForm({
               >
                 Sucré
               </button>
+            </div>
+            <div className="cake-options">
+              <label className="cake-toggle">
+                <input
+                  type="checkbox"
+                  checked={isCake}
+                  onChange={(e) => setIsCake(e.target.checked)}
+                />
+                <span>🎂 C’est un gâteau / moule</span>
+              </label>
+              {isCake && (
+                <fieldset className="pan-size-options">
+                  <legend>Taille du moule</legend>
+                  <div>
+                    {PAN_SIZES.map((size) => (
+                      <button
+                        key={size}
+                        type="button"
+                        aria-pressed={panSize === size}
+                        onClick={() => setPanSize(size)}
+                      >
+                        {size} cm
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
             </div>
             <span className="field-label">
               La photo du résultat{" "}

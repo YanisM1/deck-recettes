@@ -6,4 +6,5 @@ dist/
 .env*
 coverage/
 test-results/
+supabase/.temp/
 *.log

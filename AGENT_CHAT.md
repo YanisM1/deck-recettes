@@ -1,5 +1,16 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Corrections, étape 3/3 : Gâteau et taille du moule
+
+- Étape 2 publiée : dpl_8xC5b337yyqaGBgruXEdcJfqnAqG, READY.
+- Modèle client optionnel isCake/panSize (20|26|28), mapping SQL is_cake/pan_size, conservation dans le cache et la file hors ligne. Désactiver Gâteau retire la taille.
+- Formulaire : toggle disponible dans les deux catégories, trois tailles avec 26 cm sélectionné initialement. Badge Moule XX cm sur cartes, pages et lecteur.
+- Migration créée par supabase migration new ; CLI whoami sans jeton de connexion, application par la connexion Supabase existante. Ajout de deux colonnes et mise à jour de l’initialisation RPC, sans suppression ni modification des politiques RLS.
+- Compatibilité avec ancien schéma : relecture sans les nouvelles colonnes, écriture des champs historiques ; une mutation Gâteau reste locale et en attente jusqu’à migration, y compris après rechargement. Aucune information de moule acquittée puis perdue.
+- 51 tests réussis. Contrôle distant réel des tailles 20/26/28 et refus de 22 ; contrôle navigateur de l’édition 28→20, puis relecture Supabase et nettoyage de la seule recette QA. Carnet initial et données des autres applications préservés.
+- Audit sécurité sans nouvelle alerte DeckChef ; information préexistante sur kal_health_private.daily hors périmètre (https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy).
+- README et VERIFICATION mis à jour ; validation finale et déploiement de cette étape sans .env.local, configuration locale restaurée avant publication. Livraison : https://deck-recettes.vercel.app.
+
 ## 2026-11-16 — Corrections, étape 2/3 : boutons à icônes
 
 - Étape 1 publiée : dpl_D3EMZeEhBCj9jHrHiA9o7NQ6pWs4, READY.

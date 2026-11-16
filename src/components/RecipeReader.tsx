@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Pencil, Trash2, Check } from "lucide-react";
 import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
+import { PanBadge } from "./PanBadge";
 import { Modal } from "./Modal";
 export function RecipeReader({
   recipe,
@@ -54,6 +55,7 @@ export function RecipeReader({
         <p className="reader-category">
           {recipe.category === "sale" ? "Le côté salé" : "La touche sucrée"}
           <span>·</span>Fait maison
+          <PanBadge recipe={recipe} className="reader-pan-badge" />
         </p>
         <h1>{recipe.title}</h1>
         <div className="reader-ornament" aria-hidden="true">

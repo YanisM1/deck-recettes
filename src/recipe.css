@@ -413,3 +413,99 @@
     height: 300px;
   }
 }
+.cake-options {
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.cake-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  min-height: 30px;
+  cursor: pointer;
+}
+.cake-toggle input {
+  width: 19px;
+  height: 19px;
+  accent-color: var(--accent-primary);
+  flex-shrink: 0;
+}
+.pan-size-options {
+  border: 0;
+  padding: 0;
+  margin: 14px 0 0;
+  min-width: 0;
+}
+.pan-size-options legend {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.pan-size-options > div {
+  display: flex;
+  gap: 8px;
+}
+.pan-size-options button {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  font-size: 12px;
+}
+.pan-size-options button[aria-pressed="true"] {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--on-primary);
+}
+.pan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  border-radius: 20px;
+  font:
+    10px/1.5 Arial,
+    Helvetica,
+    sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.card-pan-badge {
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  padding: 5px 9px;
+  background: #fffe;
+  color: #332e28;
+}
+.reader-category {
+  flex-wrap: wrap;
+}
+.reader-pan-badge {
+  padding: 5px 9px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+.book-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  margin-top: 10px;
+}
+.book-meta .book-category {
+  margin-top: 0;
+}
+.book-pan-badge {
+  font-size: 8px;
+  padding: 3px 6px;
+  border: 1px solid var(--paper-rule);
+  background: var(--surface);
+  color: var(--text);
+}
