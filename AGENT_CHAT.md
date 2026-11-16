@@ -1,5 +1,15 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Gestes directs, étape 2/3 : Livre et couverture finale
+
+- Étape 1 publiée : commit 22cdd04, déploiement dpl_GABNYS2HFT7yCGC6VR7RoM8aEhPF, READY.
+- Livre réécrit autour du moteur direct partagé : rotation perspective(1800px) rotateY de la feuille courante (0→−180°) à gauche, retour de la précédente (−180→0°) à droite. Largeur mesurée hors pointermove et conservée par ResizeObserver ; ombre animée uniquement en transform/opacity.
+- Feuilles adjacentes distinctes déjà montées. Recto et verso à backface-visibility:hidden, enveloppe preserve-3d pour conserver le verso visible après 90°. Suppression des anciens keyframes de tourne-page.
+- Index N = couverture intérieure cousue aux couleurs du thème, sans tranche papier à la fin ni papier sous la dernière feuille. Bouton Revenir au début du livre et retour inverse de la dernière recette.
+- Correction partagée : annulation/capture perdue conserve les dernières coordonnées connues ; capture après intention horizontale et libération d’un geste non horizontal quittant la scène.
+- Contrôle réel navigateur 393×852 : gestes natifs dans les deux modes, fins N, retours inverses depuis les fins, remises à zéro. Couverture Chef Crème et OLED inspectées, aucun débordement ni erreur console.
+- Boutons latéraux inchangés et rectangles identiques : x=18, y=294,5/376,5/487,5, dimensions 49×70. Les captures QA sont ignorées dans .tools.
+- Tests Livre réécrits pour les transforms directes et le ressort 380 ms ; suite de 55 tests et build réussis. Checkpoint complet sans .env.local avant commit/push/déploiement.
 ## 2026-11-16 — Gestes directs, étape 1/3 : Paquet de Cartes
 
 - AGENTS.md et journal lus ; npm run sync exécuté (origin/main à jour, dépendances installées).

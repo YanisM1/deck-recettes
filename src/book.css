@@ -102,7 +102,7 @@
   right: 26px;
   top: calc(var(--safe-top) + 157px);
   bottom: calc(var(--safe-bottom) + 99px);
-  perspective: 1400px;
+  perspective: 1800px;
   touch-action: pan-y;
 }
 .book-cover {
@@ -329,12 +329,25 @@
   right: 26px;
   bottom: calc(var(--safe-bottom) + 45px);
 }
+.book-underneath,
+.book-end-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
 .book-turn-leaf {
   position: absolute;
   inset: 0;
-  z-index: 8;
+  z-index: 3;
   transform-origin: left center;
   transform-style: preserve-3d;
+  transform: perspective(1800px) rotateY(0deg);
+  will-change: transform, opacity;
+}
+.book-previous-leaf {
+  z-index: 5;
+  transform: perspective(1800px) rotateY(-180deg);
+  opacity: 0;
   pointer-events: none;
 }
 .book-face {
@@ -351,9 +364,7 @@
   background-color: var(--paper);
 }
 .book-verso-mark {
-  font:
-    italic 27px Georgia,
-    serif;
+  font: italic 27px Georgia, serif;
   text-align: center;
   color: var(--muted);
   opacity: 0.4;
@@ -364,74 +375,78 @@
   font-style: normal;
   margin-top: 14px;
 }
-.turn-forward {
-  animation: page-forward 0.68s cubic-bezier(0.45, 0.05, 0.25, 1) both;
-}
-.turn-backward {
-  animation: page-backward 0.68s cubic-bezier(0.45, 0.05, 0.25, 1) both;
-}
 .book-turn-shadow {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  z-index: 4;
   pointer-events: none;
-  border-radius: inherit;
-  background: linear-gradient(90deg, transparent, #0005, transparent);
-  animation: page-shadow 0.68s ease-in-out both;
+  border-radius: 2px 12px 12px 2px;
+  background: linear-gradient(90deg, transparent, #0008, transparent);
   transform-origin: left center;
+  transform: translate3d(0, 0, 0) scale3d(0.15, 1, 1);
+  opacity: 0;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
-.shadow-backward {
-  animation-direction: reverse;
-}
-.book-face-front::after {
-  content: "";
+.book-end-cover {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent, #0004);
-  pointer-events: none;
-  animation: leaf-shade 0.68s ease-in-out both;
+  padding: 26px 20px 56px 27px;
+  border: 1px solid color-mix(in srgb, var(--stitch), transparent 40%);
+  border-radius: 3px 12px 12px 3px;
+  background-color: var(--binding);
+  background-image:
+    radial-gradient(ellipse at 65% 20%, #ffffff0b, transparent 70%),
+    repeating-linear-gradient(100deg, #fff0 0 3px, #ffffff06 3px 4px);
+  box-shadow: inset 9px 0 12px #0003, inset 0 0 0 5px var(--binding);
+  outline: 1px dashed color-mix(in srgb, var(--stitch), transparent 35%);
+  outline-offset: -10px;
+  color: color-mix(in srgb, var(--stitch), #fff 60%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 19px;
+  text-align: center;
 }
-.turn-backward .book-face-front::after {
-  animation-direction: reverse;
+.book-end-overline {
+  font-size: 6px;
+  line-height: 1.8;
+  letter-spacing: 1.2px;
+  opacity: 0.75;
 }
-@keyframes page-forward {
-  from {
-    transform: rotateY(0deg);
-  }
-  to {
-    transform: rotateY(-180deg);
-  }
+.book-end-cover h2 {
+  font: 29px/1.15 Georgia, serif;
+  text-wrap: balance;
 }
-@keyframes page-backward {
-  from {
-    transform: rotateY(-180deg);
-  }
-  to {
-    transform: rotateY(0deg);
-  }
+.book-end-cover p {
+  font: italic 11px/1.8 Georgia, serif;
+  opacity: 0.8;
 }
-@keyframes page-shadow {
-  0% {
-    opacity: 0;
-    transform: translateX(60%) scaleX(0.15);
-  }
-  45% {
-    opacity: 0.65;
-    transform: translateX(0%) scaleX(0.7);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-50%) scaleX(0.1);
-  }
+.book-restart {
+  min-height: 48px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: #ffffff08;
+  color: inherit;
+  font: 12px/1.6 Georgia, serif;
 }
-@keyframes leaf-shade {
-  0%,
-  100% {
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
+.book-end-ornament {
+  font-size: 22px;
+  opacity: 0.65;
+}
+.book-at-end .book-page-navigation {
+  border-color: color-mix(in srgb, var(--stitch), transparent 65%);
+}
+.book-at-end .book-page-navigation p,
+.book-at-end .page-corner {
+  color: color-mix(in srgb, var(--stitch), #fff 60%);
+}
+.book-at-end .next-corner {
+  background: transparent;
 }
 [data-layout="book"] .recipe-reader {
   background-color: var(--paper);
@@ -507,3 +522,4 @@
     bottom: calc(var(--safe-bottom) + 30px);
   }
 }
+

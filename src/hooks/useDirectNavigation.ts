@@ -87,7 +87,7 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
     direction.current = 0;
     painter.current(0, 0, false);
   };
-  const updatePointer = (event: PointerEvent<HTMLDivElement>) => {
+  const updatePointer = (event: PointerEvent<HTMLDivElement>, capture = false) => {
     currentX.current = event.clientX;
     const now = performance.now(), elapsed = now - lastTime.current;
     if (event.clientX !== lastX.current) {
@@ -98,7 +98,7 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
     const dx = currentX.current - startX.current, dy = event.clientY - startY.current;
     if (intent.current === "pending" && Math.max(Math.abs(dx), Math.abs(dy)) > 5) {
       intent.current = Math.abs(dx) > Math.abs(dy) * 1.15 ? "horizontal" : "vertical";
-      if (intent.current === "horizontal") event.currentTarget.setPointerCapture?.(event.pointerId);
+      if (capture && intent.current === "horizontal") event.currentTarget.setPointerCapture?.(event.pointerId);
     }
     const delta = (Math.sign(dx) * gestureSign) as Direction;
     direction.current = available(delta) ? delta : 0;
@@ -106,7 +106,7 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
   };
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!isDragging.current || event.pointerId !== pointerId.current) return;
-    updatePointer(event);
+    updatePointer(event, true);
     if (intent.current !== "horizontal") return;
     event.preventDefault();
     suppressUntil.current = Date.now() + 450;
@@ -117,7 +117,7 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
   };
   const endPointer = (event: PointerEvent<HTMLDivElement>, cancelled = false) => {
     if (!isDragging.current || event.pointerId !== pointerId.current) return;
-    const dx = updatePointer(event);
+    const dx = cancelled ? currentX.current - startX.current : updatePointer(event);
     isDragging.current = false;
     cancelFrame();
     const from = direction.current;
@@ -137,6 +137,13 @@ export function useDirectNavigation({ maxIndex, gestureSign, extent, paint }: Op
       onPointerUp: (event: PointerEvent<HTMLDivElement>) => endPointer(event),
       onPointerCancel: (event: PointerEvent<HTMLDivElement>) => endPointer(event, true),
       onLostPointerCapture: (event: PointerEvent<HTMLDivElement>) => endPointer(event, true),
+      onPointerLeave: () => {
+        if (isDragging.current && intent.current !== "horizontal") {
+          isDragging.current = false;
+          pointerId.current = null;
+          painter.current(0, 0, false);
+        }
+      },
       onDragStart: (event: DragEvent) => event.preventDefault(),
       onClickCapture: (event: MouseEvent) => {
         if (event.detail !== 0 && (busy.current || Date.now() < suppressUntil.current)) {
