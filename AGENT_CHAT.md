@@ -1,5 +1,13 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-16 — Étape 5 : lecture et édition complètes
+
+- Étape 4 déployée : dpl_4SmSg2qzpdFJURBu3Q2waAXYENTR, READY.
+- Lecture plein écran avec photo, retour sous la safe area, ingrédients cochables, étapes numérotées et actions au bas du scroll. Suppression confirmée.
+- Formulaire en trois parties : identité/catégorie/photo, ingrédients ligne par ligne, préparation étape par étape. Ajout/retrait de lignes, conservation de la photo lors d’une modification.
+- Photothèque et appareil photo séparés, compression canvas JPEG qualité 0,75, maximum 1000 px, erreurs de décodage et quota remontées. Champs à 16 px pour éviter le zoom automatique iOS.
+- Tests ajoutés : parcours de création, édition sans perte de photo, checklist et confirmation de suppression, ratio de compression.
+
 ## 2026-11-16 — Étape 4 : paquet de cartes et filtres latéraux
 
 - Étape 3 déployée : dpl_5z4Bxqp2NrJUjNMC6RZA39aMdpfP, READY.
