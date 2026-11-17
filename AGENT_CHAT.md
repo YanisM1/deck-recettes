@@ -1,5 +1,13 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-17 — Synchronisation du nouveau poste
+
+- Dépôt `YanisM1/deck-recettes` cloné sur `main`. GitHub CLI authentifiée sous `YanisM1` et identité Git configurée globalement et dans le dépôt.
+- Dépendances installées avec `npm install`. L’audit npm signale six vulnérabilités de gravité élevée.
+- Vercel lié à `nygma/deck-recettes` et Supabase au projet `miltqwovqupvnaibjdgc`. Les variables de développement `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` ont été récupérées dans `.env.local`. Le contrôle REST de Supabase en lecture seule a renvoyé HTTP 200.
+- `gemini-key.txt` et `VITE_GEMINI_API_KEY` sont absents de la configuration locale. Aucune variable Gemini n’est configurée sur le projet Vercel. La vérification Gemini reste en attente d’une clé.
+- `npm test` a validé les 108 tests répartis sur 15 fichiers. `npm run build` a réussi avec la configuration restaurée.
+
 ## 2026-11-16 — Urgence : reconstruction native du swipe tactile
 
 - AGENTS.md et journal relus, npm run sync exécuté : main à jour, dépendances installées. Le chantier Gemini demandé juste avant reste séparé et n’est pas inclus dans ce correctif urgent.
