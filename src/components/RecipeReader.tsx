@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Pencil, Trash2, Check, Image } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Check, Share } from "lucide-react";
 import type { LayoutMode, Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
 import { Modal } from "./Modal";
-import { RecipeLinkShare } from "./RecipeLinkShare";
-import { RecipePhotoShare } from "./RecipePhotoShare";
+import { RecipeShareDialog } from "./RecipeShareDialog";
 export function RecipeReader({
   recipe,
   onClose,
@@ -28,7 +27,7 @@ export function RecipeReader({
   const ref = useRef<HTMLDialogElement>(null),
     [checked, setChecked] = useState<Set<number>>(new Set()),
     [confirming, setConfirming] = useState(false),
-    [showPhoto, setShowPhoto] = useState(false),
+    [showShare, setShowShare] = useState(false),
     [error, setError] = useState("");
   useEffect(() => {
     const dialog = ref.current!;
@@ -61,6 +60,13 @@ export function RecipeReader({
         onClick={onClose}
       >
         <ArrowLeft size={20} />
+      </button>
+      <button
+        className="reader-share"
+        aria-haspopup="dialog"
+        onClick={() => setShowShare(true)}
+      >
+        <Share size={17} aria-hidden="true" /> Partager
       </button>
       <article className="reader-content">
         <p className="reader-category">
@@ -120,10 +126,13 @@ export function RecipeReader({
         </ol>
         <p className="bon-appetit">Et maintenant… bon appétit.</p>
         <div className="recipe-actions">
-          <button className="secondary-button" onClick={() => setShowPhoto(true)}>
-            <Image size={16} aria-hidden="true" /> Partager la recette en photo
+          <button
+            className="primary-button share-recipe-action"
+            aria-haspopup="dialog"
+            onClick={() => setShowShare(true)}
+          >
+            <Share size={16} aria-hidden="true" /> Partager la recette
           </button>
-          <RecipeLinkShare recipe={recipe} synchronized={synchronized} shared={shared} />
           {onEdit && (
             <button className="secondary-button" onClick={onEdit}>
               <Pencil size={16} /> Modifier la recette
@@ -136,10 +145,16 @@ export function RecipeReader({
           )}
         </div>
       </article>
-      {showPhoto && ref.current && (
-        <Modal title="Partager en photo" onClose={() => setShowPhoto(false)}>
-          <RecipePhotoShare recipe={recipe} layout={layout} themeElement={ref.current} themeId={themeId} />
-        </Modal>
+      {showShare && ref.current && (
+        <RecipeShareDialog
+          recipe={recipe}
+          layout={layout}
+          themeElement={ref.current}
+          themeId={themeId}
+          synchronized={synchronized}
+          shared={shared}
+          onClose={() => setShowShare(false)}
+        />
       )}
       {confirming && onDelete && (
         <Modal

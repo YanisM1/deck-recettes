@@ -48,6 +48,27 @@
   background: var(--bg);
   box-shadow: 0 3px 20px #0001;
 }
+.reader-share {
+  position: absolute;
+  top: calc(var(--safe-top) + 7px);
+  right: 23px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 3px 20px #0001;
+  font-size: 12px;
+  font-weight: 600;
+}
+[data-layout="book"] .reader-share {
+  background: var(--paper);
+}
 .reader-content {
   padding: 0 29px calc(var(--safe-bottom) + 30px);
   position: relative;
@@ -195,11 +216,79 @@
   color: var(--muted);
 }
 .recipe-actions {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   border-top: 1px solid var(--line);
   padding-top: 24px;
+}
+.share-recipe-action {
+  grid-column: 1 / -1;
+}
+.recipe-share-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+[data-layout="book"] .recipe-share-dialog {
+  background: var(--paper);
+}
+.recipe-share-dialog .modal-heading .icon-button {
+  width: 44px;
+  height: 44px;
+}
+.recipe-share-options {
+  display: grid;
+  gap: 10px;
+}
+.share-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.share-option-icon {
+  display: grid;
+  flex: 0 0 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--accent-primary);
+  color: var(--on-primary);
+}
+.share-option-link {
+  background: var(--accent-secondary);
+  color: var(--on-secondary);
+}
+.share-link-toast {
+  justify-self: start;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+}
+.share-link-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.share-back {
+  display: flex;
+  align-items: center;
+  align-self: start;
+  gap: 6px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
 }
 .recipe-link-share,
 .recipe-photo-share,
@@ -219,9 +308,6 @@
   background: var(--bg);
   color: var(--text);
   font-size: 16px;
-}
-.recipe-photo-share {
-  margin-top: 14px;
 }
 .share-portion-settings {
   border: 1px solid var(--line);

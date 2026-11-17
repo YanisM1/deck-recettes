@@ -19,50 +19,73 @@ export function RecipeLinkShare({
   synchronized: boolean;
   shared?: boolean;
 }) {
-  const [url, setUrl] = useState<string | null>();
+  const [prepared, setPrepared] = useState<{
+    recipe: Recipe;
+    synchronized: boolean;
+    url: string | null;
+    textOnly: boolean;
+  }>();
   const [status, setStatus] = useState("");
   const [manual, setManual] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const url = prepared?.recipe === recipe && prepared.synchronized === synchronized
+    ? prepared.url
+    : undefined;
 
   useEffect(() => {
     let active = true;
     async function prepare() {
       if (shared) {
         const route = readRecipeShareRoute();
-        if (route?.token || route?.snapshot) return buildRecipeShareUrl(recipe.id, route);
+        if (route?.token || route?.snapshot) {
+          return { url: buildRecipeShareUrl(recipe.id, route), textOnly: false };
+        }
       }
       const token = synchronized
         ? await createRecipeShareToken(recipe.id, getCollectionKey())
         : null;
-      if (token) return buildRecipeShareUrl(recipe.id, { token });
+      if (token) return { url: buildRecipeShareUrl(recipe.id, { token }), textOnly: false };
       const snapshot = await encodeRecipeShareSnapshot(recipe);
-      return snapshot ? buildRecipeShareUrl(recipe.id, { snapshot }) : null;
+      return {
+        url: snapshot ? buildRecipeShareUrl(recipe.id, { snapshot }) : null,
+        textOnly: !!recipe.image_url && !recipe.image_url.startsWith("https://") &&
+          !recipe.image_url.startsWith("/photos/"),
+      };
     }
-    void prepare().then(
-      (link) => { if (active) setUrl(link); },
-      () => { if (active) setUrl(null); },
-    );
+    void prepare().catch(() => ({ url: null, textOnly: false })).then((result) => {
+      if (active) setPrepared({ recipe, synchronized, ...result });
+    });
     return () => { active = false; };
   }, [recipe, shared, synchronized]);
 
   return (
     <div className="recipe-link-share">
       <button
-        className="secondary-button"
-        disabled={!url}
+        className="share-option"
+        disabled={!url || sharing}
         onClick={() => {
           if (!url) return;
+          setSharing(true);
           void shareRecipeLink(recipe, url).then(({ copied, shared }) => {
             setManual(!copied);
             setStatus(copied ? "✅ Lien copié !" : shared ? "Lien partagé." : "");
-          });
+          }).finally(() => setSharing(false));
         }}
       >
-        <Link2 size={16} aria-hidden="true" /> Partager le lien de la recette
+        <span className="share-option-icon share-option-link">
+          <Link2 size={20} aria-hidden="true" />
+        </span>
+        <span>Partager le lien de la recette</span>
       </button>
+      {url && prepared?.textOnly && (
+        <p className="share-link-note">
+          Le lien contient le texte de la recette. Le partage en photo inclut aussi l’image du plat.
+        </p>
+      )}
       {url === null && (
         <p role="status">Le lien n’est pas disponible pour cette recette.</p>
       )}
-      {status && <p role="status">{status}</p>}
+      {status && <p className="share-link-toast" role="status">{status}</p>}
       {manual && url && (
         <input
           aria-label="Lien de la recette à copier"

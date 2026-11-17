@@ -12,8 +12,15 @@ const fractions: Record<string, number> = {
 const fractionCharacters = Object.keys(fractions).join("");
 const amount = String.raw`(?:\d+\s+\d+/\d+|\d+/\d+|(?:\d+\s*)?[${fractionCharacters}]|\d+(?:[.,]\d+)?)`;
 const atStart = new RegExp(
-  String.raw`^(\s*)(${amount})(?:(\s*(?:à|–|—|-)\s*)(${amount}))?(?![\d.,/]|\s*[%×]|\s*x\s*\d)`,
+  String.raw`^(\s*)(${amount})(?:(\s*(?:à|–|—|-)\s*)(${amount}))?`,
 );
+const measurement = String.raw`${amount}\s*(?:kg|mg|g|ml|cl|dl|l)`;
+const compoundMeasurement = new RegExp(
+  String.raw`^\s*${measurement}(?:\s+${measurement})+(?=$|\s)`,
+  "i",
+);
+const amounts = new RegExp(amount, "g");
+const unscalableSuffix = /^(?:[\d.,/]|\s*[%×]|\s*x\s*\d|\s+\d)/;
 const numberFormat = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3 });
 
 function parseAmount(value: string) {
@@ -38,16 +45,29 @@ export function scaleIngredients(
     return [...ingredients];
   }
   const ratio = servings / originalServings;
-  return ingredients.map((ingredient) =>
-    ingredient.replace(
-      atStart,
-      (match, whitespace: string, first: string, separator?: string, last?: string) => {
-        const start = parseAmount(first) * ratio;
-        const end = last ? parseAmount(last) * ratio : undefined;
-        if (!Number.isFinite(start) || (end !== undefined && !Number.isFinite(end))) return match;
-        return whitespace + numberFormat.format(start) +
-          (end === undefined ? "" : separator + numberFormat.format(end));
-      },
-    ),
-  );
+  return ingredients.map((ingredient) => {
+    const compound = compoundMeasurement.exec(ingredient);
+    if (compound) {
+      let valid = true;
+      const scaled = compound[0].replace(amounts, (value) => {
+        const result = parseAmount(value) * ratio;
+        if (!Number.isFinite(result)) valid = false;
+        return numberFormat.format(result);
+      });
+      return valid ? scaled + ingredient.slice(compound[0].length) : ingredient;
+    }
+    const match = atStart.exec(ingredient);
+    if (!match || unscalableSuffix.test(ingredient.slice(match[0].length))) {
+      return ingredient;
+    }
+    const [, whitespace, first, separator, last] = match;
+    const start = parseAmount(first) * ratio;
+    const end = last ? parseAmount(last) * ratio : undefined;
+    if (!Number.isFinite(start) || (end !== undefined && !Number.isFinite(end))) {
+      return ingredient;
+    }
+    return whitespace + numberFormat.format(start) +
+      (end === undefined ? "" : separator + numberFormat.format(end)) +
+      ingredient.slice(match[0].length);
+  });
 }

@@ -1,5 +1,15 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-17 — Partage de recettes, étape 3/3 · Modale et validation
+
+- L’étape 2 est en production, déploiement `dpl_5hFHHerUMHwYE3a2HZXjpVZotHog`, READY.
+- Les boutons Partager du haut et du bas du lecteur ouvrent la même modale centrée. Deux options proposent le lien direct ou la photo du thème, avec aperçu, partage natif du fichier et téléchargement.
+- La fermeture de la modale de partage conserve le lecteur ouvert. Les liens pointent vers l’adresse publique de production et les liens reçus ouvrent une recette en lecture seule. Le retour nettoie les paramètres de partage.
+- Les portions et calories facultatives se renseignent dans l’aperçu. Les quantités composées sont ajustées et les concentrations conservées. Un lien portable hors synchronisation signale quand la photo intégrée est disponible par l’export PNG.
+- Vérification Chrome tactile à 393 × 852 et DPR 2, avec services distants simulés. Modale de 361 × 250 centrée en (196,5 ; 426), PNG Carte 786 × 1982 et Livre OLED 786 × 2060, couleurs, téléchargement, copie et activation du partage contrôlés. Ouverture depuis une copie portable, lecture distante hors cache et jeton d’un autre carnet avec identifiant commun vérifiés.
+- Audit Supabase effectué. Deux avertissements signalent l’exécution intentionnelle de la fonction de lecture partagée par les rôles anon/authenticated. Son accès est limité par le jeton HMAC et les contrôles de refus ont réussi. Références [anon](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable) et [authenticated](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable).
+- 138 tests dans 19 fichiers et build réussis sans `.env.local`, puis configuration locale restaurée. La feuille de partage native a été simulée dans Chrome. Safari sur iPhone physique reste à vérifier.
+
 ## 2026-11-17 — Partage de recettes, étape 2/3 · Photo
 
 - Le lien direct de l’étape 1 est en production (déploiement `dpl_2bxUZ3we4sg43mBAkrHjH5Wyyisq`, READY, HTTP 200 sans connexion). Supabase a confirmé que la bonne combinaison donne une seule recette, que le jeton altéré ou réutilisé sur un autre identifiant ne donne aucun résultat et que la table reste inaccessible sans code de carnet.

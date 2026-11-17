@@ -50,14 +50,7 @@ export function buildRecipeShareUrl(
   recipeId: string,
   options: { token?: string | null; snapshot?: string | null; origin?: string } = {},
 ) {
-  const location = window.location;
-  const publishedOrigin =
-    import.meta.env.PROD &&
-    location.protocol === "https:" &&
-    !/^(?:localhost|.*\.localhost|127\..*|\[::1\])$/.test(location.hostname)
-      ? location.origin
-      : RECIPE_SHARE_PRODUCTION_ORIGIN;
-  const url = new URL("/", options.origin ?? publishedOrigin);
+  const url = new URL("/", options.origin ?? RECIPE_SHARE_PRODUCTION_ORIGIN);
   url.searchParams.set("recipe", recipeId.toLowerCase());
   const fragment = new URLSearchParams();
   if (options.token) fragment.set("share", options.token);
