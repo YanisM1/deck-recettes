@@ -7,6 +7,7 @@ import {
 import { RecipeStore, type RemoteRecipes } from "./recipeStore";
 import {
   readCompatible,
+  fromRecipeRow,
   saveCompatible,
   toRecipeRow,
   type RecipeRow,
@@ -26,6 +27,10 @@ type Database = {
       deckchef_initialize: {
         Args: { p_key: string; p_recipes: RecipeRow[] };
         Returns: undefined;
+      };
+      deckchef_read_shared_recipe: {
+        Args: { p_id: string; p_token: string };
+        Returns: Omit<RecipeRow, "sync_key">[];
       };
     };
     Enums: {};
@@ -69,14 +74,13 @@ export function openCollection(key: string) {
   localStorage.setItem(COLLECTION_KEY, value);
   window.location.reload();
 }
-export function createRemote(key: string): RemoteRecipes | null {
+function createRecipeClient(key?: string): SupabaseClient<Database> | null {
   const url = import.meta.env.VITE_SUPABASE_URL,
     apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !apiKey || import.meta.env.MODE === "test") return null;
-  let client: SupabaseClient<Database>;
   try {
-    client = createClient<Database>(url, apiKey, {
-      global: { headers: { "x-deckchef-key": key } },
+    return createClient<Database>(url, apiKey, {
+      global: key ? { headers: { "x-deckchef-key": key } } : undefined,
       auth: {
         persistSession: false,
         autoRefreshToken: false,
@@ -86,6 +90,29 @@ export function createRemote(key: string): RemoteRecipes | null {
   } catch {
     return null;
   }
+}
+export async function fetchLinkedRecipe(
+  id: string,
+  token: string | null,
+  signal: AbortSignal,
+) {
+  const client = createRecipeClient(token ? undefined : getCollectionKey());
+  if (!client) return null;
+  if (token) {
+    const { data, error } = await client
+      .rpc("deckchef_read_shared_recipe", { p_id: id, p_token: token })
+      .abortSignal(signal);
+    if (error) throw error;
+    return data?.[0] ? fromRecipeRow(data[0]) : null;
+  }
+  const recipes = await readCompatible((columns) =>
+    client.from("recipes").select(columns).eq("id", id).abortSignal(signal),
+  );
+  return recipes[0] ?? null;
+}
+export function createRemote(key: string): RemoteRecipes | null {
+  const client = createRecipeClient(key);
+  if (!client) return null;
   let channel: RealtimeChannel | null = null;
   const check = (error: unknown) => {
     if (error) throw error;

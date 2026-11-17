@@ -4,16 +4,21 @@ import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
 import { Modal } from "./Modal";
+import { RecipeLinkShare } from "./RecipeLinkShare";
 export function RecipeReader({
   recipe,
   onClose,
   onEdit,
   onDelete,
+  synchronized = false,
+  shared = false,
 }: {
   recipe: Recipe;
   onClose: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  synchronized?: boolean;
+  shared?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null),
     [checked, setChecked] = useState<Set<number>>(new Set()),
@@ -109,15 +114,20 @@ export function RecipeReader({
         </ol>
         <p className="bon-appetit">Et maintenant… bon appétit.</p>
         <div className="recipe-actions">
-          <button className="secondary-button" onClick={onEdit}>
-            <Pencil size={16} /> Modifier la recette
-          </button>
-          <button className="delete-recipe" onClick={() => setConfirming(true)}>
-            <Trash2 size={15} /> Supprimer la recette
-          </button>
+          <RecipeLinkShare recipe={recipe} synchronized={synchronized} shared={shared} />
+          {onEdit && (
+            <button className="secondary-button" onClick={onEdit}>
+              <Pencil size={16} /> Modifier la recette
+            </button>
+          )}
+          {onDelete && (
+            <button className="delete-recipe" onClick={() => setConfirming(true)}>
+              <Trash2 size={15} /> Supprimer la recette
+            </button>
+          )}
         </div>
       </article>
-      {confirming && (
+      {confirming && onDelete && (
         <Modal
           title="Supprimer cette recette ?"
           onClose={() => setConfirming(false)}

@@ -1,5 +1,14 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-17 — Partage de recettes, étape 1/3 · Lien direct
+
+- `npm run sync` a confirmé que `main` était à jour et que les dépendances étaient installées.
+- Le lecteur ouvre directement `?recipe=` depuis le carnet local ou Supabase. Un lien partagé est en lecture seule et le retour retire ses paramètres de l’URL.
+- Les liens synchronisés portent dans le fragment un jeton HMAC propre à la recette. Une fonction Supabase dédiée renvoie uniquement cette recette. Son SQL a été exécuté de façon ciblée sur le projet lié pour préserver l’historique de migrations partagé et les politiques RLS.
+- Sans synchronisation, le partage inclut une copie compressée de la recette. Les photos intégrées volumineuses restent disponibles via le partage PNG prévu à l’étape suivante.
+- Le bouton de lien demande la copie et le partage natif dans le même geste, avec un champ de copie manuelle en secours.
+- Sans `.env.local`, 122 tests dans 16 fichiers et build de production réussis.
+
 ## 2026-11-17 — Synchronisation du nouveau poste
 
 - Dépôt `YanisM1/deck-recettes` cloné sur `main`. GitHub CLI authentifiée sous `YanisM1` et identité Git configurée globalement et dans le dépôt.

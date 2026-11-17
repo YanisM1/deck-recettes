@@ -8,6 +8,8 @@ import { CardDeck } from "./components/CardDeck";
 import { RecipeBook } from "./components/RecipeBook";
 import { RecipeReader } from "./components/RecipeReader";
 import { RecipeForm } from "./components/RecipeForm";
+import { Modal } from "./components/Modal";
+import { useRecipeShareRoute } from "./hooks/useRecipeShareRoute";
 import { filterRecipes, type Filters, type Recipe } from "./types";
 export default function App() {
   const preferences = usePreferences(),
@@ -15,11 +17,17 @@ export default function App() {
     [settings, setSettings] = useState(false);
   const recipes = useRecipes();
   const [filters, setFilters] = useState<Filters>({ sale: true, sucre: true }),
-    [selectedId, setSelectedId] = useState<string | null>(() =>
-      new URLSearchParams(window.location.search).get("recipe"),
-    ),
+    [selectedId, setSelectedId] = useState<string | null>(null),
     [editing, setEditing] = useState<Recipe | "new" | null>(null);
-  const selected = recipes.recipes.find((recipe) => recipe.id === selectedId);
+  const shareRoute = useRecipeShareRoute(recipes.recipes);
+  const selected = shareRoute.route
+    ? shareRoute.recipe
+    : recipes.recipes.find((recipe) => recipe.id === selectedId);
+  const canEdit = !shareRoute.route || shareRoute.editable;
+  function closeRecipe() {
+    setSelectedId(null);
+    if (shareRoute.route) shareRoute.close();
+  }
   const visible = filterRecipes(recipes.recipes, filters);
   useLayoutEffect(() => {
     document.documentElement.style.setProperty("--bg-main", theme.bg);
@@ -124,13 +132,27 @@ export default function App() {
         <RecipeReader
           key={`reader-${selected.id}`}
           recipe={selected}
-          onClose={() => setSelectedId(null)}
-          onEdit={() => setEditing(selected)}
-          onDelete={() => {
+          onClose={closeRecipe}
+          onEdit={canEdit ? () => setEditing(selected) : undefined}
+          onDelete={canEdit ? () => {
             getRecipeStore().remove(selected.id);
-            setSelectedId(null);
-          }}
+            closeRecipe();
+          } : undefined}
+          shared={!!(shareRoute.route?.token || shareRoute.route?.snapshot)}
+          synchronized={recipes.status === "connected" && !recipes.pending}
         />
+      )}
+      {shareRoute.route && !selected && (
+        <Modal title="Recette partagée" onClose={closeRecipe}>
+          {shareRoute.loading ? (
+            <p role="status">Ouverture de la recette…</p>
+          ) : (
+            <p role="alert">Cette recette est indisponible. Vérifiez le lien ou réessayez avec une connexion internet.</p>
+          )}
+          <button className="secondary-button" onClick={closeRecipe}>
+            Retour aux recettes
+          </button>
+        </Modal>
       )}
       {editing && (
         <RecipeForm
