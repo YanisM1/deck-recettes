@@ -1,5 +1,13 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-17 — Partage de recettes, étape 2/3 · Photo
+
+- Le lien direct de l’étape 1 est en production (déploiement `dpl_2bxUZ3we4sg43mBAkrHjH5Wyyisq`, READY, HTTP 200 sans connexion). Supabase a confirmé que la bonne combinaison donne une seule recette, que le jeton altéré ou réutilisé sur un autre identifiant ne donne aucun résultat et que la table reste inaccessible sans code de carnet.
+- Export PNG côté navigateur à 2× pour les recettes de taille courante, avec styles Carte et Livre, couleurs du thème actif, photo, titre, badges applicables, liste intégrale des ingrédients, étapes numérotées et pied DeckChef.
+- Le carnet ne stocke pas les portions ni l’énergie. L’aperçu accepte les portions d’origine, le nombre de personnes et les calories facultatives, puis ajuste les quantités reconnues dans les ingrédients. Neuf formats de quantité ont été contrôlés.
+- Le PNG est prévisualisé avant le partage natif et peut être téléchargé directement. Une photo distante qui refuse le chargement CORS reçoit un visuel de remplacement dans le PNG.
+- Sans `.env.local`, 122 tests dans 16 fichiers et build de production réussis.
+
 ## 2026-11-17 — Partage de recettes, étape 1/3 · Lien direct
 
 - `npm run sync` a confirmé que `main` était à jour et que les dépendances étaient installées.

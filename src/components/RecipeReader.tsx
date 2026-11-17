@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Pencil, Trash2, Check } from "lucide-react";
-import type { Recipe } from "../types";
+import { ArrowLeft, Pencil, Trash2, Check, Image } from "lucide-react";
+import type { LayoutMode, Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
 import { Modal } from "./Modal";
 import { RecipeLinkShare } from "./RecipeLinkShare";
+import { RecipePhotoShare } from "./RecipePhotoShare";
 export function RecipeReader({
   recipe,
   onClose,
@@ -12,6 +13,8 @@ export function RecipeReader({
   onDelete,
   synchronized = false,
   shared = false,
+  layout = "cards",
+  themeId,
 }: {
   recipe: Recipe;
   onClose: () => void;
@@ -19,10 +22,13 @@ export function RecipeReader({
   onDelete?: () => void;
   synchronized?: boolean;
   shared?: boolean;
+  layout?: LayoutMode;
+  themeId?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null),
     [checked, setChecked] = useState<Set<number>>(new Set()),
     [confirming, setConfirming] = useState(false),
+    [showPhoto, setShowPhoto] = useState(false),
     [error, setError] = useState("");
   useEffect(() => {
     const dialog = ref.current!;
@@ -114,6 +120,9 @@ export function RecipeReader({
         </ol>
         <p className="bon-appetit">Et maintenant… bon appétit.</p>
         <div className="recipe-actions">
+          <button className="secondary-button" onClick={() => setShowPhoto(true)}>
+            <Image size={16} aria-hidden="true" /> Partager la recette en photo
+          </button>
           <RecipeLinkShare recipe={recipe} synchronized={synchronized} shared={shared} />
           {onEdit && (
             <button className="secondary-button" onClick={onEdit}>
@@ -127,6 +136,11 @@ export function RecipeReader({
           )}
         </div>
       </article>
+      {showPhoto && ref.current && (
+        <Modal title="Partager en photo" onClose={() => setShowPhoto(false)}>
+          <RecipePhotoShare recipe={recipe} layout={layout} themeElement={ref.current} themeId={themeId} />
+        </Modal>
+      )}
       {confirming && onDelete && (
         <Modal
           title="Supprimer cette recette ?"

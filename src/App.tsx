@@ -140,6 +140,8 @@ export default function App() {
           } : undefined}
           shared={!!(shareRoute.route?.token || shareRoute.route?.snapshot)}
           synchronized={recipes.status === "connected" && !recipes.pending}
+          layout={preferences.layoutMode}
+          themeId={theme.id}
         />
       )}
       {shareRoute.route && !selected && (

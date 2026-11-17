@@ -201,6 +201,72 @@
   border-top: 1px solid var(--line);
   padding-top: 24px;
 }
+.recipe-link-share,
+.recipe-photo-share,
+.share-image-actions {
+  display: grid;
+  gap: 10px;
+}
+.recipe-link-share input,
+.share-portion-fields input,
+.share-portion-fields select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+}
+.recipe-photo-share {
+  margin-top: 14px;
+}
+.share-portion-settings {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0 12px;
+  background: var(--surface);
+}
+.share-portion-settings summary {
+  padding: 14px 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.share-portion-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding-bottom: 12px;
+}
+.share-portion-fields label {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.share-image-preview {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 16px;
+  background: var(--surface);
+}
+.share-image-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: min(34dvh, 330px);
+  height: auto;
+  object-fit: contain;
+}
+.recipe-photo-share [role="status"],
+.recipe-photo-share [role="alert"],
+.recipe-link-share [role="status"] {
+  font-size: 12px;
+  color: var(--text);
+}
 .delete-recipe {
   display: flex;
   align-items: center;
