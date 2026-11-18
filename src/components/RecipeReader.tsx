@@ -3,6 +3,7 @@ import { ArrowLeft, Pencil, Trash2, Check, Share } from "lucide-react";
 import type { LayoutMode, Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
+import { CaloriesBadge } from "./CaloriesBadge";
 import { Modal } from "./Modal";
 import { RecipeShareDialog } from "./RecipeShareDialog";
 export function RecipeReader({
@@ -73,6 +74,7 @@ export function RecipeReader({
           {recipe.category === "sale" ? "Le côté salé" : "La touche sucrée"}
           <span>·</span>Fait maison
           <PanBadge recipe={recipe} className="reader-pan-badge" />
+          <CaloriesBadge recipe={recipe} className="reader-calories-badge" />
         </p>
         <h1>{recipe.title}</h1>
         <div className="reader-ornament" aria-hidden="true">

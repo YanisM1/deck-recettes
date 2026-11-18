@@ -3,6 +3,7 @@ import { useRef } from "react";
 import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
+import { CaloriesBadge } from "./CaloriesBadge";
 import { MOTION_TRANSITION, useDirectNavigation } from "../hooks/useDirectNavigation";
 
 const stackTransform = (depth: number) => `translate3d(0, ${depth * 7}px, 0) rotate3d(0, 0, 1, ${depth * 2}deg) scale3d(${1 - depth * 0.025}, ${1 - depth * 0.025}, 1)`;
@@ -47,6 +48,7 @@ export function CardDeck({ recipes, onOpen }: { recipes: Recipe[]; onOpen: (reci
             <span className="card-shade" />
             <span className="category-badge">{recipe.category === "sale" ? "SALÉ" : "SUCRÉ"}</span>
             <PanBadge recipe={recipe} className="card-pan-badge" />
+            <CaloriesBadge recipe={recipe} className={`card-calories-badge${recipe.panSize ? " with-pan" : ""}`} />
             <span className="card-number">{String(itemIndex + 1).padStart(2, "0")}</span>
             <span className="card-copy"><span className="card-overline">FAIT MAISON, TOUT SIMPLEMENT</span>
               <span className="card-title">{recipe.title}</span>

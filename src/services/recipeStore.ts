@@ -1,6 +1,7 @@
 import type { Recipe, RecipeInput } from "../types";
 import { cakeFields } from "../types";
 import { starterRecipes } from "../data/recipes";
+import { hasFreshCalories } from "./calorieAnalysis";
 export type Operation =
   | { type: "save"; recipe: Recipe }
   | { type: "delete"; id: string }
@@ -190,6 +191,8 @@ export class RecipeStore {
       throw new Error("Ajoutez un titre, au moins un ingrédient et une étape.");
     if (input.category !== "sale" && input.category !== "sucre")
       throw new Error("Catégorie invalide.");
+    if (input.servings != null && (!Number.isInteger(input.servings) || input.servings < 1 || input.servings > 999))
+      throw new Error("Choisissez entre 1 et 999 portions de base.");
     const existing = id
       ? this.state.recipes.find((r) => r.id === id)
       : undefined;
@@ -199,6 +202,7 @@ export class RecipeStore {
       recipe: Recipe = {
         ...input,
         ...cakeFields(input),
+        servings: input.servings ?? 2,
         title,
         ingredients,
         steps,
@@ -206,6 +210,7 @@ export class RecipeStore {
         created_at: existing?.created_at || now,
         updated_at: now,
       };
+    if (!hasFreshCalories(recipe)) recipe.caloriesInfo = undefined;
     const operation: Operation = { type: "save", recipe };
     this.persist(applyOperations(this.state.recipes, [operation]), [
       ...this.queue,

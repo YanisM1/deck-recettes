@@ -1,5 +1,15 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-18 — Gemini et assemblages, étape 1/3 : analyse calorique
+
+- AGENTS et journal lus, npm run sync exécuté. Analyse serveur POST /api/analyze-recipe, clé lue depuis GEMINI_API_KEY ou fichier local ignoré ; secret configuré sur Vercel sans publication dans le bundle. Vite n’expose que VITE_SUPABASE_ au client.
+- Recette complète envoyée : proportions, ingrédients, toutes les étapes, cuisson, évaporation, absorption et mélanges. Schéma JSON strict et valeurs bornées ; conversion déterministe total/8 pour pâtisserie ou total/poids cuit×100 pour les autres plats. Affichage estimatif ~, jamais une prétendue mesure exacte.
+- Analyse facultative dans la troisième partie du formulaire, indicateur, annulation et réponses périmées protégées. L’enregistrement sans IA reste possible. Portions de base et métadonnées conservées localement ; badges dans les trois vues uniquement si le contenu n’a pas changé.
+- Authentification du carnet par RLS avant l’appel, limites de taille/fréquence, timeout et erreurs sans secret. Aucun service_role utilisé. Modèle 3.8 surchargé pendant le test ; défaut retenu gemini-3.5-flash-lite après appel réel HTTP200 : recette synthétique 1545,5 kcal, 480 g cuits, ~193 kcal/part pour 8 parts.
+- Migration additive préparée par supabase migration new : servings/calories_info et initialisation DeckChef. Deux refus de revue automatique sur le DDL de production, interprétant AGENTS comme une interdiction de modifier aussi recipes. Une autorisation explicite est demandée ; aucune voie détournée utilisée, SQL non appliqué à ce stade.
+- Client compatible ancien schéma : écrit les champs historiques mais garde la mutation et les nouvelles métadonnées en attente jusqu’à migration, y compris après rechargement. Aucune donnée des autres applications modifiée.
+- 168 tests réussis avant checkpoint final, dont analyse serveur/client, formulaires, badges et persistance/ancienne base. Validation complète sans .env.local avant commit/push/déploiement de cette étape ; clé locale et traces .tools restent ignorées.
+
 ## 2026-11-17 — Partage de recettes, étape 3/3 · Modale et validation
 
 - L’étape 2 est en production, déploiement `dpl_5hFHHerUMHwYE3a2HZXjpVZotHog`, READY.

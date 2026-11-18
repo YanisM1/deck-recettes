@@ -661,3 +661,39 @@
   background: var(--surface);
   color: var(--text);
 }
+.calories-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 4px 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: 10px/1.5 Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+.card-calories-badge {
+  position: absolute;
+  top: 59px;
+  left: 20px;
+  background: #fffe;
+  border: 0;
+  color: #332e28;
+}
+.card-calories-badge.with-pan { top: 96px; }
+.book-calories-badge { font-size: 8px; padding: 3px 6px; }
+.reader-calories-badge { padding: 5px 9px; }
+.servings-base-field { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.servings-base-field .text-input { width: 86px; margin: 0; padding: 10px; }
+.calorie-analysis { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.calorie-analysis > button { width: 100%; min-height: 44px; font-size: 11px; }
+.calorie-analysis > .calories-badge { margin-top: 14px; }
+.calorie-analysis [role="status"] { font-size: 11px; line-height: 1.7; color: var(--muted); margin-top: 12px; }
+.calorie-assumptions { margin-top: 12px; font-size: 10px; line-height: 1.8; color: var(--muted); }
+.calorie-assumptions summary { cursor: pointer; }
+.calorie-assumptions p { margin-top: 8px; }
+.calorie-assumptions ul { margin: 8px 0 0; padding-left: 18px; }

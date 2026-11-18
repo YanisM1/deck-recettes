@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,6 +19,9 @@ import {
 import { Modal } from "./Modal";
 import { RecipeImage } from "./RecipeImage";
 import { compressImage } from "../services/imageCompression";
+import { analyzeRecipe } from "../services/geminiService";
+import { hasFreshCalories, recipeFingerprint, type CaloriesInfo } from "../services/calorieAnalysis";
+import { CaloriesBadge } from "./CaloriesBadge";
 type Line = { id: string; value: string };
 function makeLines(values: string[]): Line[] {
   return (values.length ? values : [""]).map((value) => ({
@@ -127,11 +130,49 @@ export function RecipeForm({
     ),
     [steps, setSteps] = useState(() => makeLines(recipe?.steps || [])),
     [image, setImage] = useState(recipe?.image_url || ""),
+    [servings, setServings] = useState(String(recipe?.servings ?? 2)),
+    [caloriesInfo, setCaloriesInfo] = useState<CaloriesInfo | undefined>(recipe?.caloriesInfo),
+    [analyzing, setAnalyzing] = useState(false),
+    [analysisError, setAnalysisError] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const photo = useRef<HTMLInputElement>(null),
     camera = useRef<HTMLInputElement>(null),
     titleId = useId();
+  const request = useRef<AbortController | null>(null);
+  const baseServings = Number(servings);
+  const validServings = Number.isInteger(baseServings) && baseServings >= 1 && baseServings <= 999;
+  const analysisInput = {
+    title: title.trim(), category, isCake, panSize: isCake ? panSize : undefined,
+    ingredients: ingredients.map(line => line.value.trim()).filter(Boolean),
+    steps: steps.map(line => line.value.trim()).filter(Boolean), servings: baseServings,
+  };
+  const fingerprint = recipeFingerprint(analysisInput);
+  const freshCalories = hasFreshCalories({ ...analysisInput, caloriesInfo }) ? caloriesInfo : undefined;
+  const canAnalyze = !!analysisInput.title && !!analysisInput.ingredients.length && !!analysisInput.steps.length && validServings;
+  useEffect(() => {
+    setAnalyzing(false);
+    setAnalysisError("");
+    return () => { request.current?.abort(); request.current = null; };
+  }, [fingerprint]);
+  async function analyze() {
+    if (request.current || !canAnalyze) return;
+    const controller = new AbortController();
+    request.current = controller;
+    setAnalyzing(true);
+    setAnalysisError("");
+    try {
+      const result = await analyzeRecipe(analysisInput, { signal: controller.signal });
+      if (!controller.signal.aborted) setCaloriesInfo(result);
+    } catch (error) {
+      if (!controller.signal.aborted) setAnalysisError((error as Error).message || "L’analyse est indisponible pour le moment.");
+    } finally {
+      if (request.current === controller) {
+        request.current = null;
+        setAnalyzing(false);
+      }
+    }
+  }
   async function importPhoto(file: File | undefined) {
     if (!file) return;
     setBusy(true);
@@ -153,6 +194,10 @@ export function RecipeForm({
       return;
     }
     if (step === 0) {
+      if (!validServings) {
+        setError("Choisissez entre 1 et 999 portions de base.");
+        return;
+      }
       setStep(1);
       return;
     }
@@ -179,6 +224,8 @@ export function RecipeForm({
           image_url: image,
           isCake,
           panSize: isCake ? panSize : undefined,
+          servings: baseServings,
+          caloriesInfo: freshCalories,
         },
         recipe?.id,
       );
@@ -238,6 +285,12 @@ export function RecipeForm({
                 Sucré
               </button>
             </div>
+            <label className="field-label servings-base-field">
+              Portions de base
+              <input type="number" min="1" max="999" step="1" inputMode="numeric"
+                className="text-input" value={servings} required
+                onChange={event => setServings(event.currentTarget.value)} />
+            </label>
             <div className="cake-options">
               <label className="cake-toggle">
                 <input
@@ -356,6 +409,21 @@ export function RecipeForm({
               Chaque geste compte. Racontez-les dans l’ordre.
             </p>
             <EditableLines lines={steps} onChange={setSteps} kind="steps" />
+            <div className="calorie-analysis">
+              <button type="button" className="secondary-button" disabled={analyzing || busy || !canAnalyze}
+                onClick={() => { void analyze(); }}>
+                {analyzing ? "Analyse des calories…" : "✨ Analyser les calories avec l’IA"}
+              </button>
+              {analyzing && <p role="status">Cuisson, mélanges et quantités en cours d’analyse…</p>}
+              {analysisError && <p className="notice" role="alert">{analysisError} Vous pouvez enregistrer sans analyse.</p>}
+              <CaloriesBadge recipe={{ ...analysisInput, caloriesInfo: freshCalories }} />
+              {freshCalories && <details className="calorie-assumptions">
+                <summary>À propos de cette estimation</summary>
+                <p>{freshCalories.basis === "part" ? "Gâteau divisé en 8 parts." : "Énergie rapportée à 100 g de préparation cuite."}</p>
+                <ul>{freshCalories.assumptions.map((assumption, index) => <li key={index}>{assumption}</li>)}</ul>
+              </details>}
+              <p className="section-caption">Estimation facultative. L’enregistrement reste disponible.</p>
+            </div>
           </>
         )}
         {error && (

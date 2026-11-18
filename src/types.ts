@@ -1,3 +1,4 @@
+import type { CaloriesInfo } from "./services/calorieAnalysis";
 export type Category = "sale" | "sucre";
 export type LayoutMode = "cards" | "book";
 export type PanSize = 20 | 26 | 28;
@@ -24,6 +25,8 @@ export interface Recipe {
   updated_at: string;
   isCake?: boolean;
   panSize?: PanSize;
+  servings?: number;
+  caloriesInfo?: CaloriesInfo;
 }
 export type RecipeInput = Pick<
   Recipe,
@@ -34,6 +37,8 @@ export type RecipeInput = Pick<
   | "image_url"
   | "isCake"
   | "panSize"
+  | "servings"
+  | "caloriesInfo"
 >;
 export type Filters = Record<Category, boolean>;
 export const filterRecipes = (recipes: Recipe[], filters: Filters) =>

@@ -3,6 +3,7 @@ import { useRef, type Ref } from "react";
 import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
+import { CaloriesBadge } from "./CaloriesBadge";
 import { MOTION_TRANSITION, useDirectNavigation } from "../hooks/useDirectNavigation";
 
 function BookPage({ recipe }: { recipe: Recipe }) {
@@ -18,6 +19,7 @@ function BookPage({ recipe }: { recipe: Recipe }) {
           {recipe.category === "sale" ? "Du côté salé" : "Pour la douceur"}
         </p>
         <PanBadge recipe={recipe} className="book-pan-badge" />
+        <CaloriesBadge recipe={recipe} className="book-calories-badge" />
       </div>
       <div className="book-flourish" aria-hidden="true"><span>✳</span></div>
       <div className="book-ingredient-preview">

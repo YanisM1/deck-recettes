@@ -34,6 +34,8 @@ it("crée une recette avec plusieurs lignes à travers les trois parties", () =>
       image_url: "",
       isCake: false,
       panSize: undefined,
+      servings: 2,
+      caloriesInfo: undefined,
     },
     undefined,
   );
