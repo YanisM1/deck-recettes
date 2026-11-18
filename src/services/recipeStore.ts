@@ -2,6 +2,7 @@ import type { Recipe, RecipeInput } from "../types";
 import { cakeFields } from "../types";
 import { starterRecipes } from "../data/recipes";
 import { hasFreshCalories } from "./calorieAnalysis";
+import { normalizeLinkedRecipeIds, validateRecipeLinks } from "./compositeRecipes";
 export type Operation =
   | { type: "save"; recipe: Recipe }
   | { type: "delete"; id: string }
@@ -211,6 +212,8 @@ export class RecipeStore {
         updated_at: now,
       };
     if (!hasFreshCalories(recipe)) recipe.caloriesInfo = undefined;
+    recipe.linkedRecipeIds = normalizeLinkedRecipeIds(input.linkedRecipeIds, recipe.id);
+    validateRecipeLinks(recipe.id, recipe.linkedRecipeIds, this.state.recipes);
     const operation: Operation = { type: "save", recipe };
     this.persist(applyOperations(this.state.recipes, [operation]), [
       ...this.queue,

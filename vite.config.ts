@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config";
 import { loadEnv, type Plugin } from "vite";
-import { handleAnalyzeRecipe } from "./server/gemini";
+import { handleAnalyzeRecipe } from "./server/gemini.js";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 function localAnalysis(mode: string): Plugin {
@@ -36,6 +36,7 @@ export default defineConfig(({ mode }) => ({
   envPrefix: ["VITE_SUPABASE_"],
   plugins: [react(), tailwindcss(), localAnalysis(mode)],
   test: {
+    include: ["src/**/*.{test,spec}.{ts,tsx}", "server/**/*.{test,spec}.{ts,tsx}"],
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     restoreMocks: true,

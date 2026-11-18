@@ -1,5 +1,15 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-18 — Gemini et assemblages, étape 2/3 : modèle et fusion
+
+- Étape 1 publiée : 1955be2, dpl_8NKALSyzXmqqyp9oATEa2R4jbStG, READY. Le contrôle GET de l’API a révélé une erreur ESM de production, absente des tests locaux : imports serveur sans extension. Imports corrigés en .js résolus par TypeScript ; vérification HTTP après ce déploiement.
+- linkedRecipeIds dans le modèle, mapping linked_recipe_ids et cache/file locale. Validation avant sauvegarde : UUID, carnet courant, maximum 20 liens directs, auto-liaison et cycles refusés.
+- composeRecipes construit des sections conservant les préparations originales, puis ingrédients/étapes cumulés et consigne d’assemblage. Chaque recette commune est comptée une seule fois ; composants manquants/cycles historiques signalés sans faux total calorique.
+- Calories dérivées calculées séparément : somme des énergies et masses cuites des analyses propres/fraîches, total/8 si gâteau ou pondération par 100 g sinon. Une estimation composite n’est jamais réutilisée comme analyse de base, ni sauvegardée à sa place.
+- Nouvelle migration CLI additive pour linked_recipe_ids et contrôle de forme. Les deux migrations de production restent en attente de l’autorisation explicite demandée après refus de revue automatique. Aucun contournement ; champs et liens conservés localement/en attente tant que la base n’est pas migrée.
+- Tests de fusion et de persistance : sections, portions, diamants sans double comptage, cycles, suppressions, calories périmées et reprise après migration simulée. Les copies de validation ignorées .tools sont désormais exclues de la collecte Vitest.
+- Validation complète sans .env.local, journal, commit/push et déploiement CLI de cette étape. Les données et politiques des autres applications sont préservées.
+
 ## 2026-11-18 — Gemini et assemblages, étape 1/3 : analyse calorique
 
 - AGENTS et journal lus, npm run sync exécuté. Analyse serveur POST /api/analyze-recipe, clé lue depuis GEMINI_API_KEY ou fichier local ignoré ; secret configuré sur Vercel sans publication dans le bundle. Vite n’expose que VITE_SUPABASE_ au client.

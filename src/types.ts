@@ -27,6 +27,7 @@ export interface Recipe {
   panSize?: PanSize;
   servings?: number;
   caloriesInfo?: CaloriesInfo;
+  linkedRecipeIds?: string[];
 }
 export type RecipeInput = Pick<
   Recipe,
@@ -39,6 +40,7 @@ export type RecipeInput = Pick<
   | "panSize"
   | "servings"
   | "caloriesInfo"
+  | "linkedRecipeIds"
 >;
 export type Filters = Record<Category, boolean>;
 export const filterRecipes = (recipes: Recipe[], filters: Filters) =>

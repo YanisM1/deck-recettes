@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
-import { isCaloriesInfo, normalizeAnalysisInput, recipeFingerprint, type AnalysisInput, type CaloriesInfo } from "../src/services/calorieAnalysis";
+import { isCaloriesInfo, normalizeAnalysisInput, recipeFingerprint, type AnalysisInput, type CaloriesInfo } from "../src/services/calorieAnalysis.js";
 
 export const DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite";
 const MAX_BODY_BYTES = 32_000;
