@@ -9,6 +9,14 @@
 - L’ancien sélecteur de liens a été retiré de la création/édition courante. Les liens des recettes historiques sont conservés lors de l’édition si leurs sources existent encore ; la création par fusion ne crée pas de liaison en arrière-plan.
 - Outil pur de fusion testé pour les sections, l’assemblage, le choix de catégorie/moule/portions, l’indépendance et l’absence de mutation des sources. Parcours de sélection/formulaire testé, dont seuil de deux et nouvelle entrée indépendante. Checkpoint de l’étape : 294 tests/43 fichiers réussis, build secretless, commit 063c61f poussé sur main et déploiement dpl_Dc7FVLS4F1SgHEonPueYnYgvnyqu READY. La revue visuelle à 393×852 et le test de l’analyse après enregistrement sont au dernier jalon.
 
+## 2026-11-19 — Validation finale, étape 3/3 : flux complet et responsive
+
+- Test App de bout en bout en mémoire : choix de deux recettes, nouvel intitulé, photo injectée au résultat compressé JPEG, copie sauvegardée/rechargée dans le store local, sources strictement identiques avant/après et demande d’analyse automatique avec tout le contenu assemblé. L’identifiant de la nouvelle recette est distinct et linkedRecipeIds est vide.
+- Contrôles d’affichage des calories IA et locale, cause explicite de limite Google vs limite par carnet, quantité par 1/8 ou 100 g, plus contrat CSS de cadre fixed `100vw/100dvh`, safe areas minimales 59/34 px et modales de largeur bornée/marge automatique avec hauteur réservée aux safe areas.
+- L’essai de revue visuelle navigateur sur 393×852 n’a pas pu démarrer : `cua.getState()` signale « Local browser access is unavailable for this chat » ; Chrome est absent de l’inventaire du helper. Une tentative de lancement n’a retourné aucun état de fenêtre. Aucune capture ni observation visuelle n’est revendiquée. Le contrat CSS et les parcours jsdom sont couverts par tests.
+- Vérification production calories réalisée à l’étape 1 : gâteau Gemini 280 kcal/part sauvegardé/relu ; plat salé repli local 152 kcal/100 g sauvegardé/relu après HTTP504 Google. QA supprimée par identifiant dédié ; les recettes utilisateur n’ont pas été modifiées.
+- En attente du checkpoint final automatisé : suite complète `npm test`, `npm run build` sans `.env.local` ni `gemini-key.txt`, analyse de bundle, commit/push et déploiement Vercel.
+
 ## 2026-11-19 — Calories et création par fusion, étape 1/3 : diagnostic et réparation
 
 - npm run sync : origin/main déjà à jour ; npm install terminé, aucune vulnérabilité.

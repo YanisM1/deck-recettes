@@ -25,6 +25,8 @@ it("fonctionne hors ligne et expose la cause sans divulguer le corps d’erreur"
     { run: () => Promise.resolve(Response.json({ code: "INVALID_API_KEY" }, { status: 503 })), message: /clé Gemini du serveur est refusée/ },
     { run: () => Promise.resolve(new Response("invalid-json")), message: /illisible/ },
     { run: () => Promise.resolve(Response.json({ code: "RATE_LIMITED" }, { status: 429 })), message: /limite temporaire/ },
+    { run: () => Promise.resolve(Response.json({ code: "REQUEST_RATE_LIMITED" }, { status: 429 })), message: /limite temporaire de calcul/ },
+    { run: () => Promise.resolve(Response.json({ code: "GEMINI_RATE_LIMITED" }, { status: 429 })), message: /Google Gemini a atteint sa limite/ },
   ];
   for (const { run, message } of responses) {
     vi.stubGlobal("fetch", vi.fn().mockImplementation(run));

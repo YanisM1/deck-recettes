@@ -13,6 +13,15 @@ describe("badge calorique", () => {
     render(<CaloriesBadge recipe={{ ...recipe, caloriesInfo: info }} />);
     expect(screen.getByText(cake ? "~250 kcal / part (1/8)" : "~200 kcal / 100 g")).toBeInTheDocument();
     expect(screen.getByTitle(cake ? /Estimation pour 1 part sur 8/ : /Estimation pour 100 g du plat cuit/)).toBeInTheDocument();
+    expect(screen.getByText("Calcul IA")).toBeInTheDocument();
+  });
+  it("distingue visiblement le repli local de l’analyse IA", () => {
+    const recipe = starterRecipes[0];
+    const info: CaloriesInfo = { type: "plat_sale", totalKcal: 1520, cookedWeightGrams: 1000, kcal: 152, basis: "100g", estimated: true,
+      assumptions: ["Moyennes alimentaires."], analyzedAt: "1970-01-01T00:00:00Z", model: "local-nutrition-v1", fingerprint: recipeFingerprint(recipe) };
+    render(<CaloriesBadge recipe={{ ...recipe, caloriesInfo: info }} />);
+    expect(screen.getByText("~152 kcal / 100 g")).toBeInTheDocument();
+    expect(screen.getByText("Estimation locale")).toBeInTheDocument();
   });
   it("masque l’absence d’estimation et les données périmées", () => {
     const recipe = starterRecipes[0];

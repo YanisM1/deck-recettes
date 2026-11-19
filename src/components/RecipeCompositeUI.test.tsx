@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { RecipeReader } from "./RecipeReader";
 import { RecipeForm } from "./RecipeForm";
 import { starterRecipes } from "../data/recipes";
 import type { Recipe } from "../types";
 import { recipeFingerprint, type CaloriesInfo } from "../services/calorieAnalysis";
+import * as imageCompression from "../services/imageCompression";
 const share = vi.hoisted(() => vi.fn());
 vi.mock("./RecipeShareDialog", () => ({ RecipeShareDialog: (props: unknown) => { share(props); return <div>Partage prêt</div>; } }));
 vi.mock("../services/geminiService", () => ({ analyzeRecipe: vi.fn() }));
@@ -122,6 +123,22 @@ describe("fusion depuis la création", () => {
     expect(input.steps.at(-1)).toMatch(/^Assemblage final/);
     expect(base).toEqual(baseBefore);
     expect(garnish).toEqual(garnishBefore);
+  });
+
+  it("importe une nouvelle photo compressée pour le résultat assemblé", async () => {
+    const { base, garnish } = fixtures();
+    const file = new File(["synthetic image"], "resultat.png", { type: "image/png" });
+    const compressed = "data:image/jpeg;base64,compressed-result";
+    const compress = vi.spyOn(imageCompression, "compressImage").mockResolvedValue(compressed);
+    render(<RecipeForm availableRecipes={[base, garnish]} onClose={() => {}} onSave={() => {}} />);
+    fireEvent.click(screen.getByRole("tab", { name: /Lier des recettes/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Gâteau au yaourt/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Ganache au chocolat/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Suivant : Créer la recette combinée" }));
+    fireEvent.change(screen.getByLabelText("Choisir une photo"), { target: { files: [file] } });
+    await waitFor(() => expect(screen.getByAltText("Aperçu de votre recette")).toHaveAttribute("src", compressed));
+    expect(compress).toHaveBeenCalledWith(file);
+    expect(screen.getByRole("button", { name: "Appareil photo" })).toBeInTheDocument();
   });
 
   it("préserve les liaisons valides existantes lors de la modification d’une ancienne recette", () => {
