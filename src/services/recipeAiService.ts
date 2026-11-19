@@ -24,6 +24,8 @@ export async function analyzeRecipeAi(input: AnalysisInput & { caloriesInfo?: Ca
         INVALID_RESPONSE: "Gemini n’a pas renvoyé un résultat exploitable.",
         INVALID_API_KEY: "La clé Gemini du serveur est refusée par Google.",
         MODEL_UNAVAILABLE: "Le modèle Gemini configuré et ses modèles de secours sont indisponibles.",
+        INVALID_REQUEST: "Google a rejeté la configuration de la requête structurée.",
+        PROVIDER_ERROR: "Google Gemini a rencontré une erreur temporaire.",
         UNAVAILABLE: "Le service Gemini est temporairement indisponible.",
         RATE_LIMITED: "La limite temporaire de calcul a été atteinte.",
         TIMEOUT: "Le calcul a dépassé son délai de réponse.",

@@ -34,6 +34,18 @@ describe("API calories et variantes en un appel", () => {
       expect.stringContaining("/models/gemini-2.5-flash:generateContent"),
     ]);
   });
+  it("retourne un code explicite et ne journalise ni la clé ni le corps fournisseur", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const secret = "test-private-server-key";
+    const network = vi.fn().mockResolvedValue(Response.json({ error: { message: secret + " invalid schema" } }, { status: 400 }));
+    const result = await handleRecipeAi(request(), { ...options(network), keyReader: async () => secret });
+    expect(result.status).toBe(502);
+    expect(await result.json()).toEqual({ code: "INVALID_REQUEST" });
+    const serialized = JSON.stringify(log.mock.calls);
+    expect(serialized).toContain("INVALID_REQUEST");
+    expect(serialized).not.toContain(secret);
+    expect(serialized).not.toContain("invalid schema");
+  });
   it("renvoie les trois moules et kcal par huitième pour toute recette sucrée", async () => {
     const network = vi.fn().mockResolvedValue(wrap(response()));
     const result = await handleRecipeAi(request(), options(network));

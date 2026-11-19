@@ -81,13 +81,24 @@ export async function handleRecipeAi(request: Request, options: Options = {}): P
       const missingModel = upstream.status === 404 || (upstream.status === 400 && /model|not found|not supported/i.test(providerMessage));
       if (!missingModel || candidateModel === models.at(-1)) {
         if (upstream.status === 429) throw new AnalysisError(429, "RATE_LIMITED");
-        if (upstream.status === 401 || upstream.status === 403) throw new AnalysisError(503, "INVALID_API_KEY");
-        if (missingModel) throw new AnalysisError(502, "MODEL_UNAVAILABLE");
-        throw new AnalysisError(502, "UNAVAILABLE");
+        if (upstream.status === 401 || upstream.status === 403) {
+          console.error("recipe-ai Gemini authorization failed", { status: upstream.status, model: candidateModel });
+          throw new AnalysisError(503, "INVALID_API_KEY");
+        }
+        if (missingModel) {
+          console.error("recipe-ai Gemini model unavailable", { status: upstream.status, model: candidateModel });
+          throw new AnalysisError(502, "MODEL_UNAVAILABLE");
+        }
+        const code = upstream.status === 400 ? "INVALID_REQUEST" : upstream.status >= 500 ? "PROVIDER_ERROR" : "UNAVAILABLE";
+        console.error("recipe-ai Gemini request failed", { status: upstream.status, model: candidateModel, code });
+        throw new AnalysisError(502, code);
       }
     }
     if (!upstream?.ok) throw new AnalysisError(502, "UNAVAILABLE");
-    const payload = await upstream.json(), candidate = payload?.candidates?.[0];
+    let payload: any;
+    try { payload = await upstream.json(); }
+    catch { throw new AnalysisError(502, "INVALID_RESPONSE"); }
+    const candidate = payload?.candidates?.[0];
     if (candidate?.finishReason !== "STOP") throw new AnalysisError(502, "INVALID_RESPONSE");
     const text = candidate.content?.parts?.filter((part: { thought?: boolean; text?: string }) => !part.thought && typeof part.text === "string").map((part: { text: string }) => part.text).join("");
     if (!text || text.length > 512_000) throw new AnalysisError(502, "INVALID_RESPONSE");
@@ -120,8 +131,15 @@ export async function handleRecipeAi(request: Request, options: Options = {}): P
     if (!isRecipeAiData(result, input)) throw new AnalysisError(502, "INVALID_RESPONSE");
     return json(result);
   } catch (error) {
-    if (error instanceof AnalysisError) return json({ code: error.code }, error.status);
-    if (error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)) return json({ code: "TIMEOUT" }, 504);
+    if (error instanceof AnalysisError) {
+      if (error.status >= 500) console.error("recipe-ai request failed", { status: error.status, code: error.code });
+      return json({ code: error.code }, error.status);
+    }
+    if (error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)) {
+      console.error("recipe-ai request timed out", { name: error.name });
+      return json({ code: "TIMEOUT" }, 504);
+    }
+    console.error("recipe-ai internal failure", { name: error instanceof Error ? error.name : "UnknownError" });
     return json({ code: "UNAVAILABLE" }, 502);
   }
 }

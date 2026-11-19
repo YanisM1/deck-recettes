@@ -78,7 +78,10 @@ export async function authorize(request: Request, env: NodeJS.ProcessEnv, fetche
   const response = await fetcher(`${url.replace(/\/$/, "")}/rest/v1/recipe_collections?select=sync_key&limit=1`, {
     headers: { apikey: apiKey, "x-deckchef-key": key }, cache: "no-store", signal: AbortSignal.any([request.signal, AbortSignal.timeout(8000)]),
   });
-  if (!response.ok) throw new AnalysisError(503, "UNAVAILABLE");
+  if (!response.ok) {
+    console.error("recipe-ai Supabase authorization failed", { status: response.status });
+    throw new AnalysisError(503, "UNAVAILABLE");
+  }
   const rows: unknown = await response.json();
   if (!Array.isArray(rows) || rows.length !== 1 || rows[0]?.sync_key !== key) throw new AnalysisError(401, "UNAUTHORIZED");
   return key;
