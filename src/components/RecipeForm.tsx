@@ -23,7 +23,7 @@ import { analyzeRecipeAi } from "../services/recipeAiService";
 import { hasFreshRecipeAi, type RecipeAiData } from "../services/recipeAiTypes";
 import { hasFreshCalories, recipeFingerprint, type CaloriesInfo } from "../services/calorieAnalysis";
 import { CaloriesBadge } from "./CaloriesBadge";
-import { validateRecipeLinks } from "../services/compositeRecipes";
+import { buildMergedRecipeDraft } from "../services/recipeMerge";
 type Line = { id: string; value: string };
 function makeLines(values: string[]): Line[] {
   return (values.length ? values : [""]).map((value) => ({
@@ -121,6 +121,8 @@ export function RecipeForm({
   availableRecipes?: Recipe[];
 }) {
   const [step, setStep] = useState(0),
+    [flow, setFlow] = useState<"new" | "select" | "merged">("new"),
+    [selectedRecipeIds, setSelectedRecipeIds] = useState<string[]>([]),
     [title, setTitle] = useState(recipe?.title || ""),
     [category, setCategory] = useState<Category>(recipe?.category || "sale"),
     [isCake, setIsCake] = useState(
@@ -157,16 +159,7 @@ export function RecipeForm({
   const freshCalories = hasFreshCalories({ ...analysisInput, caloriesInfo }) ? caloriesInfo : undefined;
   const freshAiData = hasFreshRecipeAi({ ...analysisInput, aiScalingData }) ? aiScalingData : undefined;
   const canAnalyze = !!analysisInput.title && !!analysisInput.ingredients.length && !!analysisInput.steps.length && validServings;
-  const linkChoices = availableRecipes.filter(candidate => candidate.id !== recipe?.id).map(candidate => {
-    const selected = linkedRecipeIds.includes(candidate.id);
-    let unavailable = "";
-    if (!selected) {
-      try { validateRecipeLinks(recipe?.id, [...linkedRecipeIds, candidate.id], availableRecipes); }
-      catch (error) { unavailable = (error as Error).message; }
-    }
-    return { candidate, selected, unavailable };
-  });
-  const missingLinks = linkedRecipeIds.filter(id => !availableRecipes.some(candidate => candidate.id === id));
+  const selectedSources = availableRecipes.filter(candidate => selectedRecipeIds.includes(candidate.id));
   useEffect(() => {
     setAnalyzing(false);
     setAnalysisError("");
@@ -205,6 +198,28 @@ export function RecipeForm({
       setBusy(false);
     }
   }
+  function startMerge() {
+    try {
+      const draft = buildMergedRecipeDraft(selectedSources);
+      setTitle(draft.title);
+      setCategory(draft.category);
+      setIsCake(draft.isCake === true);
+      setPanSize(isPanSize(draft.panSize) ? draft.panSize : 26);
+      setServings(String(draft.servings ?? 2));
+      setImage("");
+      setIngredients(makeLines(draft.ingredients));
+      setSteps(makeLines(draft.steps));
+      setLinkedRecipeIds([]);
+      setCaloriesInfo(undefined);
+      setAiScalingData(undefined);
+      setAnalysisError("");
+      setError("");
+      setStep(0);
+      setFlow("merged");
+    } catch (error) {
+      setError((error as Error).message);
+    }
+  }
   function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
@@ -235,8 +250,6 @@ export function RecipeForm({
       return;
     }
     try {
-      try { validateRecipeLinks(recipe?.id, linkedRecipeIds, availableRecipes); }
-      catch (error) { setStep(0); throw error; }
       onSave(
         {
           title,
@@ -249,7 +262,9 @@ export function RecipeForm({
           servings: baseServings,
           caloriesInfo: freshCalories,
           ...(freshAiData ? { aiScalingData: freshAiData } : {}),
-          linkedRecipeIds,
+          // Existing legacy links are retained when editing; new and merged
+          // recipes are independent records with no private recipe links.
+          linkedRecipeIds: recipe ? linkedRecipeIds.filter(id => availableRecipes.some(candidate => candidate.id === id)) : [],
         },
         recipe?.id,
       );
@@ -259,15 +274,41 @@ export function RecipeForm({
   }
   return (
     <Modal
-      title={recipe ? "Votre touche personnelle." : "À vous de jouer."}
+      title={recipe ? "Votre touche personnelle." : flow === "select" ? "Vos recettes à réunir." : flow === "merged" ? "Créer la recette combinée." : "À vous de jouer."}
       onClose={onClose}
       className="recipe-form"
     >
       <p className="modal-subtitle">
         {recipe
           ? "Les bonnes recettes évoluent avec vous."
+          : flow === "select" ? "Choisissez au moins deux préparations du carnet. Elles resteront intactes."
+          : flow === "merged" ? "Une nouvelle recette indépendante sera créée à partir de votre sélection."
           : "Les recettes qu’on aime méritent une place ici."}
       </p>
+      {!recipe && flow !== "merged" && <div className="recipe-flow-tabs" role="tablist" aria-label="Type de création">
+        <button type="button" role="tab" aria-selected={flow === "new"} onClick={() => { setFlow("new"); setError(""); }}>
+          ➕ Nouvelle recette
+        </button>
+        <button type="button" role="tab" aria-selected={flow === "select"} onClick={() => { setFlow("select"); setError(""); }}>
+          🔗 Lier des recettes
+        </button>
+      </div>}
+      {flow === "select" ? <section className="recipe-merge-selection" aria-label="Sélection des recettes">
+        <p>Sélectionnées : <strong>{selectedRecipeIds.length}</strong>. Une copie complète sera créée pour garder chaque recette d’origine intacte.</p>
+        {availableRecipes.length ? <div className="recipe-merge-choices">
+          {availableRecipes.map(candidate => <label key={candidate.id}>
+            <input type="checkbox" checked={selectedRecipeIds.includes(candidate.id)}
+              onChange={() => setSelectedRecipeIds(ids => ids.includes(candidate.id) ? ids.filter(id => id !== candidate.id) : [...ids, candidate.id])} />
+            <span>{candidate.title}<small>{candidate.category === "sucre" || candidate.isCake ? "Sucré" : "Salé"} · {candidate.ingredients.length} ingrédients · {candidate.steps.length} étapes</small></span>
+          </label>)}
+        </div> : <p className="recipe-merge-empty">Ajoutez au moins deux recettes au carnet pour les combiner.</p>}
+        {error && <p className="notice error-notice" role="alert">{error}</p>}
+        <div className="editor-footer">
+          <button type="button" className="secondary-button" onClick={() => { setFlow("new"); setError(""); }}>Annuler</button>
+          <button type="button" className="primary-button" disabled={selectedRecipeIds.length < 2} onClick={startMerge}>Suivant : Créer la recette combinée</button>
+        </div>
+      </section> : <>
+      {flow === "merged" && <button type="button" className="merge-back-link" onClick={() => setFlow("select")}>← Modifier la sélection ({selectedSources.length})</button>}
       <div className="editor-progress" aria-label={`Partie ${step + 1} sur 3`}>
         {["La recette", "Ingrédients", "Préparation"].map((label, index) => (
           <div key={label} className={index <= step ? "active" : ""}>
@@ -280,7 +321,7 @@ export function RecipeForm({
         {step === 0 && (
           <>
             <label className="field-label" htmlFor={titleId}>
-              Le nom de votre recette
+              {flow === "merged" ? "Nouveau nom de la recette" : "Le nom de votre recette"}
             </label>
             <input
               id={titleId}
@@ -342,25 +383,11 @@ export function RecipeForm({
                 </fieldset>
               )}
             </div>
-            <details className="linked-recipe-picker">
-              <summary>🔗 Lier une autre recette{linkedRecipeIds.length ? ` · ${linkedRecipeIds.length}` : ""}</summary>
-              <p>Chaque préparation liée est ajoutée avec toutes ses quantités. Le choix des portions ajuste ensuite l’ensemble.</p>
-              {linkChoices.length ? <div className="linked-recipe-choices">
-                {linkChoices.map(({ candidate, selected, unavailable }) => <label key={candidate.id} title={unavailable || undefined}>
-                  <input type="checkbox" checked={selected} disabled={!!unavailable}
-                    onChange={() => setLinkedRecipeIds(ids => selected ? ids.filter(id => id !== candidate.id) : [...ids, candidate.id])} />
-                  <span>{candidate.title}{unavailable && <small>Cette liaison ne peut pas être ajoutée.</small>}</span>
-                </label>)}
-              </div> : <p>Ajoutez d’autres recettes au carnet pour les assembler ici.</p>}
-              {missingLinks.map(id => <label className="missing-recipe-link" key={id}>
-                <input type="checkbox" checked onChange={() => setLinkedRecipeIds(ids => ids.filter(value => value !== id))} />
-                <span>Recette liée indisponible · décocher pour la retirer</span>
-              </label>)}
-            </details>
             <span className="field-label">
-              La photo du résultat{" "}
+              {flow === "merged" ? "Nouvelle photo du résultat final" : "La photo du résultat"}{" "}
               <span className="optional">· facultatif</span>
             </span>
+            {flow === "merged" && <p className="merge-photo-invite">Ajoutez une photo du plat assemblé. Vous pouvez la prendre maintenant ou choisir une image dans la photothèque.</p>}
             <div className="photo-picker">
               {image ? (
                 <RecipeImage
@@ -463,7 +490,7 @@ export function RecipeForm({
                 <ul>{freshCalories.assumptions.map((assumption, index) => <li key={index}>{assumption}</li>)}</ul>
               </details>}
               <p className="section-caption">La recette est enregistrée immédiatement ; l’analyse peut se terminer en arrière-plan.</p>
-              {linkedRecipeIds.length > 0 && <p className="section-caption">Cette analyse concerne la base. Les calories de l’assemblage seront additionnées lorsque chaque préparation aura une estimation à jour.</p>}
+              {flow === "merged" && <p className="section-caption">L’analyse portera sur la nouvelle recette entière, avec tous les ingrédients et toutes les étapes réunis.</p>}
             </div>
           </>
         )}
@@ -506,6 +533,7 @@ export function RecipeForm({
           </button>
         </div>
       </form>
+      </>}
     </Modal>
   );
 }

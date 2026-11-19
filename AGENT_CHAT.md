@@ -1,5 +1,14 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-19 — Nouvelle recette par fusion, étape 2/3 : sélection et édition indépendante
+
+- Dans le formulaire « + », ajout de deux choix en haut : Nouvelle recette et Lier des recettes. L’écran de sélection exige au moins deux sources et garde son bouton désactivé avant ce seuil.
+- La sélection préremplit un nouveau brouillon sans identifiant, avec nom éditable, photo vierge et invitation claire à prendre/choisir une photo. L’import et la caméra utilisent le même compresseur canvas JPEG déjà utilisé par les recettes classiques.
+- Les ingrédients et étapes sont copiés avec des séparateurs par source ; une étape d’assemblage finale est ajoutée et reste modifiable. Catégorie, gâteau/moule et portions viennent de la recette principale. Les métadonnées IA/calories et les liens privés des sources ne sont pas copiés.
+- À l’enregistrement, le nouveau brouillon passe par le stockage ordinaire avec linkedRecipeIds vide. L’App le sauvegarde avant de lancer l’analyse globale existante. Les recettes source restent lues uniquement.
+- L’ancien sélecteur de liens a été retiré de la création/édition courante. Les liens des recettes historiques sont conservés lors de l’édition si leurs sources existent encore ; la création par fusion ne crée pas de liaison en arrière-plan.
+- Outil pur de fusion testé pour les sections, l’assemblage, le choix de catégorie/moule/portions, l’indépendance et l’absence de mutation des sources. Parcours de sélection/formulaire testé, dont seuil de deux et nouvelle entrée indépendante. Tests ciblés : 16/16 réussis ; checkpoint complet de l’étape en cours.
+
 ## 2026-11-19 — Calories et création par fusion, étape 1/3 : diagnostic et réparation
 
 - npm run sync : origin/main déjà à jour ; npm install terminé, aucune vulnérabilité.

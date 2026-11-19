@@ -89,31 +89,49 @@ describe("recettes liées dans le lecteur", () => {
     expect(screen.queryByRole("button", { name: "4 personnes" })).not.toBeInTheDocument();
   });});
 
-describe("liaisons discrètes dans le formulaire", () => {
-  it("préserve la sélection, bloque les cycles et ne propose pas la recette elle-même", () => {
+describe("fusion depuis la création", () => {
+  it("sélectionne plusieurs recettes puis enregistre une copie indépendante et modifiable", () => {
     const { base, garnish } = fixtures();
-    const loop: Recipe = { ...starterRecipes[2], title: "Préparation en boucle", linkedRecipeIds: [base.id] };
     const save = vi.fn();
-    render(<RecipeForm recipe={base} availableRecipes={[base, garnish, loop]} onClose={() => {}} onSave={save} />);
-    fireEvent.click(screen.getByText(/🔗 Lier une autre recette/));
-    expect(screen.getByRole("checkbox", { name: "Ganache au chocolat" })).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: /Préparation en boucle/ })).toBeDisabled();
-    expect(screen.queryByRole("checkbox", { name: "Gâteau au yaourt" })).not.toBeInTheDocument();
+    const baseBefore = structuredClone(base), garnishBefore = structuredClone(garnish);
+    render(<RecipeForm availableRecipes={[base, garnish]} onClose={() => {}} onSave={save} />);
+    fireEvent.click(screen.getByRole("tab", { name: /Lier des recettes/ }));
+    const next = screen.getByRole("button", { name: "Suivant : Créer la recette combinée" });
+    expect(next).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Gâteau au yaourt/ }));
+    expect(next).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Ganache au chocolat/ }));
+    expect(next).toBeEnabled();
+    fireEvent.click(next);
+    const title = screen.getByLabelText("Nouveau nom de la recette");
+    expect(title).toHaveValue("Gâteau au yaourt & Ganache au chocolat");
+    fireEvent.change(title, { target: { value: "Gâteau au yaourt et ganache" } });
+    expect(screen.getByText("Nouvelle photo du résultat final")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continuer" }));
+    expect(screen.getByDisplayValue("— Gâteau au yaourt —")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("200 g de farine")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("— Ganache au chocolat —")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continuer" }));
+    expect(screen.getByDisplayValue("Faire fondre le chocolat.")).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/Assemblage final/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    const [input, id] = save.mock.calls[0];
+    expect(input).toMatchObject({ title: "Gâteau au yaourt et ganache", image_url: "", linkedRecipeIds: [], category: "sucre", isCake: true });
+    expect(id).toBeUndefined();
+    expect(input.ingredients).toContain("— Ganache au chocolat —");
+    expect(input.steps.at(-1)).toMatch(/^Assemblage final/);
+    expect(base).toEqual(baseBefore);
+    expect(garnish).toEqual(garnishBefore);
+  });
+
+  it("préserve les liaisons valides existantes lors de la modification d’une ancienne recette", () => {
+    const { base, garnish } = fixtures();
+    const save = vi.fn();
+    render(<RecipeForm recipe={base} availableRecipes={[base, garnish]} onClose={() => {}} onSave={save} />);
+    expect(screen.queryByText(/Lier une autre recette/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continuer" }));
     fireEvent.click(screen.getByRole("button", { name: "Continuer" }));
     fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
     expect(save.mock.calls[0][0].linkedRecipeIds).toEqual([garnish.id]);
-  });
-
-  it("permet de retirer une liaison dont la recette a été supprimée", () => {
-    const { base } = fixtures();
-    const save = vi.fn();
-    render(<RecipeForm recipe={base} availableRecipes={[base]} onClose={() => {}} onSave={save} />);
-    fireEvent.click(screen.getByText(/🔗 Lier une autre recette/));
-    fireEvent.click(screen.getByRole("checkbox", { name: /Recette liée indisponible/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Continuer" }));
-    fireEvent.click(screen.getByRole("button", { name: "Continuer" }));
-    fireEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
-    expect(save.mock.calls[0][0].linkedRecipeIds).toEqual([]);
   });
 });
