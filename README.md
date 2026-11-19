@@ -20,11 +20,19 @@ Dans Réglages, choisissez **Paquet de cartes** ou **Livre de recettes**, puis l
 
 La lecture complète présente la photo, les ingrédients cochables, les étapes numérotées, puis Modifier/Supprimer au bas du défilement. Le formulaire en trois parties accepte la photothèque et l’appareil photo, avec compression JPEG à 1000 px maximum et qualité 0,75.
 
+Le bouton **✨ Analyser les calories avec l’IA**, dans la préparation du formulaire, envoie la recette complète à Gemini via le serveur : ingrédients, proportions, étapes, cuisson, mélanges et moule éventuel. L’estimation tient compte de la masse cuite ; le badge indique les kcal par part pour un gâteau divisé en huit, ou par 100 g pour les autres plats. Les valeurs restent des estimations, accompagnées des hypothèses de l’analyse. Modifier le contenu invalide le résultat précédent. Enregistrer sans IA reste possible.
+
+**🔗 Lier une autre recette**, replié dans la première partie du formulaire, permet de sélectionner plusieurs préparations du même carnet. Le lecteur conserve leurs sections, enchaîne les étapes puis propose l’assemblage. Chaque préparation est incluse avec toutes ses quantités ; les boutons 2p/4p/6p/8p ajustent l’ensemble à partir des portions de base. Les calories additionnent les énergies et les masses cuites, sans compter deux fois une préparation commune. Un composant manquant ou une analyse périmée masque le total calorique. Les cycles sont refusés.
+
+Les badges composites apparaissent aussi dans les modes Cartes et Livre. Leur partage utilise une copie autonome avec les ingrédients et étapes complets, sans identifiants de recettes liées ni accès au carnet. L’export photo reprend les portions et l’estimation affichées. Les liens synchronisés ordinaires continuent d’utiliser la lecture partagée historique ; les nouvelles métadonnées sont conservées dans les copies autonomes et les photos.
+
 ## Commandes
 
 `npm install`, `npm run dev`, `npm test`, `npm run build`. `npm run sync` effectue `git pull origin main && npm install`.
 
 Les tests et le build fonctionnent sans `.env.local` : le carnet utilise alors uniquement localStorage. Pour le cloud, configurez les deux variables publiques de `.env.example`. Aucune clé de service n’est utilisée. `scripts/checkpoint.ps1 -Message "..."` lance tests, build, commit, push Git et déploiement Vercel. La connexion GitHub utilise la CLI `gh` ; les publications passent par `git`.
+
+L’analyse demande une clé **serveur** `GEMINI_API_KEY`, ou le fichier local ignoré `gemini-key.txt`. `GEMINI_MODEL` permet de choisir le modèle ; le défaut est `gemini-3.5-flash-lite`. Ne placez aucune clé Gemini dans une variable publique. Vite expose seulement les variables `VITE_SUPABASE_`. En production, l’API vérifie le code privé du carnet avant d’appeler Gemini ; elle applique une limite de taille, un délai maximal et une limite de fréquence par instance.
 
 ## Données et synchronisation
 
@@ -33,6 +41,8 @@ La limite de deux projets Supabase gratuits empêchait d’en créer un troisiè
 Chaque carnet reçoit un code privé aléatoire de 64 caractères. Les règles RLS n’autorisent que les lignes dont le code correspond à l’en-tête `x-deckchef-key`. Copiez ce code dans Réglages, puis ouvrez le même carnet sur l’autre appareil. Toute personne possédant ce code peut accéder à ce carnet : conservez-le pour vous.
 
 Le store sauvegarde d’abord localement et conserve une file d’opérations en attente. Il reprend après rechargement, retour réseau, focus et visibilité. Realtime Broadcast transmet uniquement des invalidations sur un canal dérivé par SHA-256 ; les données sont relues avec les règles privées. Les JPEG compressés sont stockés avec leur recette et protégés de la même façon. Un quota local plein provoque une erreur explicite avant la sauvegarde.
+
+Les migrations additives `20261118105817_deckchef_calorie_analysis.sql` et `20261118110837_deckchef_composite_recipes.sql` ajoutent `servings`, `calories_info` et `linked_recipe_ids`, puis adaptent l’initialisation DeckChef. Elles ont été appliquées après autorisation explicite, sans modifier les règles RLS ni les tables des autres applications. Le client conserve les métadonnées en attente s’il rencontre encore un ancien schéma.
 
 Quatre exemples apparaissent à la première ouverture. Le Reset Total nécessite deux confirmations et vide uniquement le carnet courant. Un carnet vidé reste vide, même sur un nouvel appareil.
 

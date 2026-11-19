@@ -88,12 +88,14 @@ export default function App() {
           <RecipeBook
             key={`book-${visible.map((r) => r.id).join("|")}`}
             recipes={visible}
+            allRecipes={recipes.recipes}
             onOpen={(recipe) => setSelectedId(recipe.id)}
           />
         ) : (
           <CardDeck
             key={`cards-${visible.map((r) => r.id).join("|")}`}
             recipes={visible}
+            allRecipes={recipes.recipes}
             onOpen={(recipe) => setSelectedId(recipe.id)}
           />
         )
@@ -132,6 +134,7 @@ export default function App() {
         <RecipeReader
           key={`reader-${selected.id}`}
           recipe={selected}
+          availableRecipes={canEdit ? recipes.recipes : []}
           onClose={closeRecipe}
           onEdit={canEdit ? () => setEditing(selected) : undefined}
           onDelete={canEdit ? () => {
@@ -159,6 +162,7 @@ export default function App() {
       {editing && (
         <RecipeForm
           recipe={editing === "new" ? undefined : editing}
+          availableRecipes={recipes.recipes}
           onClose={() => setEditing(null)}
           onSave={(input, id) => {
             const saved = getRecipeStore().save(input, id);

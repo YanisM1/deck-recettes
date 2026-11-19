@@ -1,5 +1,15 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-19 — Gemini et assemblages, étape 3/3 : interface et validation finale
+
+- Étape 2 publiée : a23d409, dpl_A6yc1SVLyxdW1VSCzF3awgkXos9U, READY. L’API Gemini de production fonctionne après correction ESM : appel réel HTTP 200, modèle gemini-3.5-flash-lite, sans divulgation de clé.
+- Autorisation explicite utilisateur reçue pour les ajouts sur recipes et l’adaptation de deckchef_initialize. Les deux migrations additives ont ensuite été appliquées avec succès : servings/calories_info, puis linked_recipe_ids et validation. Aucune suppression de données existantes, règle RLS ou table d’une autre application modifiée.
+- Sélecteur discret repliable dans le formulaire, multi-sélection du carnet courant, auto-liens/cycles refusés et liens manquants retirables. Le lecteur affiche les sections des préparations, toutes les étapes numérotées et l’assemblage final ; portions globales 2/4/6/8 et saisie bornée. Les analyses propres restent distinctes des totaux dérivés.
+- Badges combinés dans les trois vues, calculés à partir du carnet complet même avec filtres. Un composant manquant ou une analyse périmée retire le total. Partage composite et portions adaptées via copie autonome aplatie, sans liens privés ; photo préremplie avec portions et calories. Régression de calories à la réouverture des copies composites corrigée et testée pour gâteau/plat.
+- Test Supabase réel dans deux carnets QA neufs : initialisation, sauvegarde/relecture, analyses et liens, pondération 500 puis 550 kcal/part, contraintes et isolation avec UUID identiques. Accès croisé et sans en-tête : zéro ligne. Suppression d’un enfant QA sans faux total ; quatre recettes QA nettoyées, marqueurs de carnets vides conservés.
+- Parcours navigateur 393×852 isolé du cloud : deux analyses Gemini réelles, ganache liée au gâteau, sections/assemblage, quantités doublées de 2 à 4 personnes, calories combinées et export photo concordants. Badges Cartes/Livre, absence de débordement horizontal et console sans erreur vérifiés. Captures .tools/composite-*-393.jpg. Aucun essai iPhone physique revendiqué.
+- 199 tests dans 30 fichiers réussis. Checkpoint final : tests puis build sans .env.local, restauration de la configuration, contrôle de l’absence de clé dans le bundle, journal, commit/push main et déploiement Vercel CLI. README et VERIFICATION actualisés. Les liens synchronisés ordinaires gardent leur ancien contrat de métadonnées ; copies autonomes et photos conservent les ajouts.
+
 ## 2026-11-18 — Gemini et assemblages, étape 2/3 : modèle et fusion
 
 - Étape 1 publiée : 1955be2, dpl_8NKALSyzXmqqyp9oATEa2R4jbStG, READY. Le contrôle GET de l’API a révélé une erreur ESM de production, absente des tests locaux : imports serveur sans extension. Imports corrigés en .js résolus par TypeScript ; vérification HTTP après ce déploiement.

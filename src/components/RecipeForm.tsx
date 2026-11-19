@@ -22,6 +22,7 @@ import { compressImage } from "../services/imageCompression";
 import { analyzeRecipe } from "../services/geminiService";
 import { hasFreshCalories, recipeFingerprint, type CaloriesInfo } from "../services/calorieAnalysis";
 import { CaloriesBadge } from "./CaloriesBadge";
+import { validateRecipeLinks } from "../services/compositeRecipes";
 type Line = { id: string; value: string };
 function makeLines(values: string[]): Line[] {
   return (values.length ? values : [""]).map((value) => ({
@@ -111,10 +112,12 @@ export function RecipeForm({
   recipe,
   onClose,
   onSave,
+  availableRecipes = [],
 }: {
   recipe?: Recipe;
   onClose: () => void;
   onSave: (input: RecipeInput, id?: string) => void;
+  availableRecipes?: Recipe[];
 }) {
   const [step, setStep] = useState(0),
     [title, setTitle] = useState(recipe?.title || ""),
@@ -131,6 +134,7 @@ export function RecipeForm({
     [steps, setSteps] = useState(() => makeLines(recipe?.steps || [])),
     [image, setImage] = useState(recipe?.image_url || ""),
     [servings, setServings] = useState(String(recipe?.servings ?? 2)),
+    [linkedRecipeIds, setLinkedRecipeIds] = useState<string[]>(recipe?.linkedRecipeIds ?? []),
     [caloriesInfo, setCaloriesInfo] = useState<CaloriesInfo | undefined>(recipe?.caloriesInfo),
     [analyzing, setAnalyzing] = useState(false),
     [analysisError, setAnalysisError] = useState(""),
@@ -150,6 +154,16 @@ export function RecipeForm({
   const fingerprint = recipeFingerprint(analysisInput);
   const freshCalories = hasFreshCalories({ ...analysisInput, caloriesInfo }) ? caloriesInfo : undefined;
   const canAnalyze = !!analysisInput.title && !!analysisInput.ingredients.length && !!analysisInput.steps.length && validServings;
+  const linkChoices = availableRecipes.filter(candidate => candidate.id !== recipe?.id).map(candidate => {
+    const selected = linkedRecipeIds.includes(candidate.id);
+    let unavailable = "";
+    if (!selected) {
+      try { validateRecipeLinks(recipe?.id, [...linkedRecipeIds, candidate.id], availableRecipes); }
+      catch (error) { unavailable = (error as Error).message; }
+    }
+    return { candidate, selected, unavailable };
+  });
+  const missingLinks = linkedRecipeIds.filter(id => !availableRecipes.some(candidate => candidate.id === id));
   useEffect(() => {
     setAnalyzing(false);
     setAnalysisError("");
@@ -215,6 +229,8 @@ export function RecipeForm({
       return;
     }
     try {
+      try { validateRecipeLinks(recipe?.id, linkedRecipeIds, availableRecipes); }
+      catch (error) { setStep(0); throw error; }
       onSave(
         {
           title,
@@ -226,6 +242,7 @@ export function RecipeForm({
           panSize: isCake ? panSize : undefined,
           servings: baseServings,
           caloriesInfo: freshCalories,
+          linkedRecipeIds,
         },
         recipe?.id,
       );
@@ -318,6 +335,21 @@ export function RecipeForm({
                 </fieldset>
               )}
             </div>
+            <details className="linked-recipe-picker">
+              <summary>🔗 Lier une autre recette{linkedRecipeIds.length ? ` · ${linkedRecipeIds.length}` : ""}</summary>
+              <p>Chaque préparation liée est ajoutée avec toutes ses quantités. Le choix des portions ajuste ensuite l’ensemble.</p>
+              {linkChoices.length ? <div className="linked-recipe-choices">
+                {linkChoices.map(({ candidate, selected, unavailable }) => <label key={candidate.id} title={unavailable || undefined}>
+                  <input type="checkbox" checked={selected} disabled={!!unavailable}
+                    onChange={() => setLinkedRecipeIds(ids => selected ? ids.filter(id => id !== candidate.id) : [...ids, candidate.id])} />
+                  <span>{candidate.title}{unavailable && <small>Cette liaison ne peut pas être ajoutée.</small>}</span>
+                </label>)}
+              </div> : <p>Ajoutez d’autres recettes au carnet pour les assembler ici.</p>}
+              {missingLinks.map(id => <label className="missing-recipe-link" key={id}>
+                <input type="checkbox" checked onChange={() => setLinkedRecipeIds(ids => ids.filter(value => value !== id))} />
+                <span>Recette liée indisponible · décocher pour la retirer</span>
+              </label>)}
+            </details>
             <span className="field-label">
               La photo du résultat{" "}
               <span className="optional">· facultatif</span>
@@ -423,6 +455,7 @@ export function RecipeForm({
                 <ul>{freshCalories.assumptions.map((assumption, index) => <li key={index}>{assumption}</li>)}</ul>
               </details>}
               <p className="section-caption">Estimation facultative. L’enregistrement reste disponible.</p>
+              {linkedRecipeIds.length > 0 && <p className="section-caption">Cette analyse concerne la base. Les calories de l’assemblage seront additionnées lorsque chaque préparation aura une estimation à jour.</p>}
             </div>
           </>
         )}

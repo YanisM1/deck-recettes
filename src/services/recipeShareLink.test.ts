@@ -2,6 +2,7 @@ import { createHmac, webcrypto } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { starterRecipes } from "../data/recipes";
+import { recipeFingerprint, type CaloriesInfo } from "./calorieAnalysis";
 import {
   buildRecipeShareUrl,
   clearRecipeShareRoute,
@@ -65,6 +66,18 @@ describe("route de recette partagée", () => {
 });
 
 describe("recette portable", () => {
+  it("conserve les portions et une estimation fraîche sans publier les identifiants des recettes liées", async () => {
+    const base = { ...recipe, servings: 4, linkedRecipeIds: [starterRecipes[1].id] };
+    const caloriesInfo: CaloriesInfo = { type: "plat_sale", totalKcal: 1600, cookedWeightGrams: 800, kcal: 200, basis: "100g", estimated: true,
+      assumptions: [], analyzedAt: "2026-11-18T12:00:00Z", model: "gemini-3.8-flash", fingerprint: recipeFingerprint(base) };
+    const snapshot = await encodeRecipeShareSnapshot({ ...base, caloriesInfo });
+    const portable = await decodeRecipeShareSnapshot(snapshot!, recipe.id);
+    expect(portable?.servings).toBe(4);
+    expect(portable?.caloriesInfo).toEqual(caloriesInfo);
+    expect(portable).not.toHaveProperty("linkedRecipeIds");
+    const outdated = await encodeRecipeShareSnapshot({ ...base, ingredients: ["Nouvelle quantité"], caloriesInfo });
+    expect(await decodeRecipeShareSnapshot(outdated!, recipe.id)).not.toHaveProperty("caloriesInfo");
+  });
   it("reconstruit une recette UTF-8 et son moule depuis une URL sans Supabase", async () => {
     const cake = { ...recipe, title: "Gâteau d’été 🍋", isCake: true, panSize: 26 as const };
     const snapshot = await encodeRecipeShareSnapshot(cake);

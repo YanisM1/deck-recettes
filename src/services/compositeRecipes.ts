@@ -116,13 +116,15 @@ export function composeRecipes(root: CompositeRecipe, recipes: readonly Composit
     result.caloriesUnavailableReason = "L’assemblage est incomplet : ses calories globales ne peuvent pas être calculées.";
     return result;
   }
+  // A portable share already contains its complete flattened batch. Preserve
+  // its fresh derived estimate; only a new summation needs own Gemini analyses.
+  if (components.length === 1 && hasFreshCalories(root)) {
+    result.caloriesInfo = root.caloriesInfo;
+    return result;
+  }
   const missingAnalysis = components.find(recipe => !hasFreshCalories(recipe) || !recipe.caloriesInfo?.model.startsWith("gemini-"));
   if (missingAnalysis) {
     result.caloriesUnavailableReason = `Analyse à calculer ou à actualiser pour « ${missingAnalysis.title} ».`;
-    return result;
-  }
-  if (components.length === 1) {
-    result.caloriesInfo = root.caloriesInfo;
     return result;
   }
   const totalKcal = components.reduce((sum, recipe) => sum + recipe.caloriesInfo!.totalKcal, 0);

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, Share2 } from "lucide-react";
 import type { LayoutMode, Recipe } from "../types";
 import { scaleIngredients } from "../utils/recipePortions";
+import { hasFreshCalories } from "../services/calorieAnalysis";
 import {
   canShareRecipeImage,
   downloadRecipeImage,
@@ -20,16 +21,24 @@ export function RecipePhotoShare({
   themeElement: HTMLElement;
   themeId?: string;
 }) {
-  const [original, setOriginal] = useState("");
-  const [target, setTarget] = useState("");
-  const [energy, setEnergy] = useState("");
-  const [unit, setUnit] = useState<"portion" | "100g">("portion");
+  const info = hasFreshCalories(recipe) ? recipe.caloriesInfo : undefined;
+  const initialServings = validServings(String(recipe.servings ?? "")) ? String(recipe.servings) : info ? "2" : "";
+  const [original, setOriginal] = useState(initialServings);
+  const [target, setTarget] = useState(initialServings);
+  const [energy, setEnergy] = useState<string | null>(null);
+  const [chosenUnit, setChosenUnit] = useState<"portion" | "100g" | null>(null);
   const [preview, setPreview] = useState<{ file: File; url: string } | null>(null);
   const [drawingError, setDrawingError] = useState(false);
   const [shareError, setShareError] = useState(false);
   const originalServings = validServings(original);
   const servings = originalServings && (validServings(target) ?? originalServings);
-  const calories = energy === "" ? NaN : Number(energy);
+  const unit = chosenUnit ?? (info?.basis === "100g" ? "100g" : "portion");
+  const ratio = originalServings && servings ? servings / originalServings : 1;
+  const automaticEnergy = info ? Math.round(unit === "100g"
+    ? info.totalKcal / info.cookedWeightGrams * 100
+    : info.totalKcal * ratio / (info.basis === "part" ? 8 : servings ?? recipe.servings ?? 2)) : NaN;
+  const calories = energy === null ? automaticEnergy : energy === "" ? NaN : Number(energy);
+  const energyInput = energy ?? (Number.isFinite(automaticEnergy) ? String(automaticEnergy) : "");
 
   useEffect(() => {
     let active = true;
@@ -84,18 +93,20 @@ export function RecipePhotoShare({
           </label>
           <label>
             Calories (kcal)
-            <input type="number" min="0" step="any" inputMode="decimal" value={energy}
+            <input type="number" min="0" step="any" inputMode="decimal" value={energyInput}
               onChange={(event) => setEnergy(event.currentTarget.value)} />
           </label>
           <label>
             Unité
             <select value={unit}
-              onChange={(event) => setUnit(event.currentTarget.value === "100g" ? "100g" : "portion")}>
+              onChange={(event) => setChosenUnit(event.currentTarget.value === "100g" ? "100g" : "portion")}>
               <option value="portion">Par part</option>
               <option value="100g">Pour 100 g</option>
             </select>
           </label>
         </div>
+        {info && (energy !== null || chosenUnit !== null) && <button type="button" className="text-button"
+          onClick={() => { setEnergy(null); setChosenUnit(null); }}>Rétablir l’estimation</button>}
       </details>
       {drawingError && <p role="alert">L’image n’a pas pu être créée.</p>}
       {!preview && !drawingError && <p role="status">Création de l’aperçu…</p>}

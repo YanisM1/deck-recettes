@@ -1,4 +1,16 @@
-# Vérification DeckChef — 16 novembre 2026
+# Vérification DeckChef — 19 novembre 2026
+
+## Analyse Gemini et recettes composites
+
+- Suite finale : 199 tests dans 30 fichiers. Analyse serveur/client, réponses incohérentes, délai, autorisation, annulation, invalidation des anciens résultats, persistance et compatibilité avec l’ancien schéma sont couverts. Le checkpoint final exécute les tests et le build sans `.env.local`, puis restaure le fichier.
+- Appels Gemini réels réussis depuis le serveur local et l’API de production, avec `gemini-3.5-flash-lite`. La production a renvoyé HTTP 200 pour une recette synthétique : 1565 kcal, 430 g cuits et ~196 kcal par huitième. Le résultat est estimatif ; il ne constitue pas une mesure nutritionnelle exacte.
+- Migrations additives appliquées après l’autorisation explicite de modifier les seuls champs DeckChef demandés. Contrôle réseau réel dans deux carnets QA neufs, avec les mêmes UUID : initialisation et sauvegarde/relecture des portions, du moule, des analyses et des liens ; total combiné 500 puis 550 kcal/part après modification ; aucun accès croisé ni lecture sans en-tête. Auto-liaison, doublon et UUID invalide rejetés par la contrainte SQL.
+- La suppression d’un composant QA masque le faux total sans affecter l’autre carnet. Les quatre recettes créées pour ce contrôle ont été nettoyées ; seuls les marqueurs de carnets QA vides restent. Aucune politique d’accès ni table d’une autre application modifiée.
+- Fusion : sections, étapes et assemblage, cycles, composants absents, analyses périmées et graphes avec préparation commune testés. Une estimation composite n’est pas réadditionnée comme analyse de base. Les copies autonomes conservent leurs calories à la réouverture, pour gâteau et plat, sans réactiver ce double comptage.
+- Parcours réel à 393 × 852, isolé du cloud : création d’une ganache et d’un gâteau, deux analyses Gemini réussies, liaison dans le formulaire, badge combiné ~283 kcal/part. À 4 personnes au lieu de 2, 200 g de farine deviennent 400 g et les 100 g de chocolat/crème deviennent chacun 200 g ; le total passe à ~565 kcal/part. L’export photo reprend 4 personnes et 565 kcal/part.
+- Badges vérifiés sur les Cartes et les pages du Livre. Aucun débordement horizontal ni avertissement/erreur de console pendant le parcours. Captures ignorées : `.tools/composite-reader-393.jpg`, `.tools/composite-cards-393.jpg`, `.tools/composite-book-393.jpg` ; résultats distants sans secret dans `.tools/composite-live/result.json` et `.tools/gemini-prod-qa-summary.json`.
+- Clé Gemini conservée côté serveur et exclue de Git/Vercel pour le fichier local ; contrôle du bundle final avant publication. Le partage composite est autonome et ne donne aucun accès aux recettes privées. Les liens synchronisés ordinaires conservent le contrat historique de leur RPC ; les copies autonomes et photos incluent les nouvelles métadonnées.
+- Limite matérielle inchangée : navigateur de bureau au viewport demandé, sans essai Safari sur iPhone physique ni mesure de 120 Hz.
 
 ## Reconstruction du swipe au doigt
 

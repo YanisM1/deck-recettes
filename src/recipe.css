@@ -697,3 +697,30 @@
 .calorie-assumptions summary { cursor: pointer; }
 .calorie-assumptions p { margin-top: 8px; }
 .calorie-assumptions ul { margin: 8px 0 0; padding-left: 18px; }
+.linked-recipe-picker {
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 12px;
+}
+.linked-recipe-picker summary { cursor: pointer; }
+.linked-recipe-picker p { margin-top: 12px; font-size: 10px; line-height: 1.7; color: var(--muted); }
+.linked-recipe-choices { max-height: 230px; overflow-y: auto; margin-top: 10px; }
+.linked-recipe-choices label, .missing-recipe-link { display: flex; align-items: center; gap: 10px; padding: 10px 0; min-height: 44px; }
+.linked-recipe-choices input, .missing-recipe-link input { width: 18px; height: 18px; flex: none; accent-color: var(--accent-primary); }
+.linked-recipe-choices small { display: block; font-size: 9px; color: var(--muted); line-height: 1.7; }
+.missing-recipe-link { font-size: 10px; color: var(--muted); }
+.reader-portions { margin: 20px 0; padding: 14px; border: 1px solid var(--line); border-radius: 14px; }
+.reader-portions > label { display: flex; align-items: center; justify-content: space-between; gap: 14px; font-size: 11px; }
+.portion-number { display: flex; align-items: center; gap: 4px; }
+.portion-number button { display: grid; place-items: center; width: 36px; height: 40px; border: 1px solid var(--line); border-radius: 8px; background: transparent; }
+.portion-number input { width: 54px; height: 40px; padding: 5px; border: 0; text-align: center; background: transparent; color: var(--text); font-size: 16px; font-variant-numeric: tabular-nums; }
+.portion-shortcuts { display: flex; gap: 8px; margin-top: 12px; }
+.portion-shortcuts button { min-height: 36px; flex: 1; border: 1px solid var(--line); border-radius: 8px; background: transparent; font-size: 10px; }
+.portion-shortcuts button[aria-pressed="true"] { border-color: var(--accent-primary); background: var(--accent-primary); color: var(--on-primary); }
+.reader-portions > p, .composite-notes p { margin-top: 10px; font-size: 10px; line-height: 1.8; color: var(--muted); }
+.composite-notes { margin: 18px 0; }
+.composite-ingredient-section > h3, .composite-step-section > h3 { margin-top: 26px; font: italic 17px/1.4 Georgia, serif; color: var(--text); }
+.composite-ingredient-section .ingredient-list { margin-top: 12px; }
+.composite-step-section .steps-list { margin-top: 18px; }

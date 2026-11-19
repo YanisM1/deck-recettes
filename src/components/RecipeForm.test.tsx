@@ -36,6 +36,7 @@ it("crée une recette avec plusieurs lignes à travers les trois parties", () =>
       panSize: undefined,
       servings: 2,
       caloriesInfo: undefined,
+      linkedRecipeIds: [],
     },
     undefined,
   );

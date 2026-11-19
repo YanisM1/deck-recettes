@@ -1,6 +1,7 @@
 import { starterRecipes } from "../data/recipes";
 import { isPanSize, type Recipe } from "../types";
 import { isRecipe } from "./recipeStore";
+import { hasFreshCalories } from "./calorieAnalysis";
 
 export const RECIPE_SHARE_PRODUCTION_ORIGIN = "https://deck-recettes.vercel.app";
 const RECIPE_ID = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
@@ -97,7 +98,7 @@ function snapshotRecipe(recipe: Recipe): Recipe {
   const panSize = recipe.isCake !== false && isPanSize(recipe.panSize)
     ? recipe.panSize
     : undefined;
-  return {
+  const portable: Recipe = {
     id: recipe.id.toLowerCase(),
     title: recipe.title,
     category: recipe.category,
@@ -108,7 +109,10 @@ function snapshotRecipe(recipe: Recipe): Recipe {
     updated_at: recipe.updated_at,
     isCake: panSize ? true : recipe.isCake === true ? true : undefined,
     panSize,
+    ...(Number.isSafeInteger(recipe.servings) && recipe.servings! >= 1 && recipe.servings! <= 999 ? { servings: recipe.servings } : {}),
   };
+  if (hasFreshCalories({ ...portable, caloriesInfo: recipe.caloriesInfo })) portable.caloriesInfo = recipe.caloriesInfo;
+  return portable;
 }
 
 async function transformBytes(

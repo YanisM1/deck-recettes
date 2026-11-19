@@ -64,6 +64,19 @@ describe("assemblage des recettes", () => {
     expect(result.caloriesInfo!.parts).toBeUndefined();
   });
 
+  it.each([true, false])("conserve les calories d’une copie partagée complète sans liaison (gâteau=%s)", cake => {
+    const base = analyzed(recipe(1, { isCake: cake, linkedRecipeIds: [id(2)] }), 1600, 800);
+    const child = analyzed(recipe(2), 800, 200);
+    const combined = composeRecipes(base, [base, child]);
+    const portable = { ...base, linkedRecipeIds: undefined, ingredients: combined.ingredients, steps: combined.steps, caloriesInfo: combined.caloriesInfo };
+    expect(hasFreshCalories(portable)).toBe(true);
+    const reopened = composeRecipes(portable, []);
+    expect(reopened.caloriesInfo).toBe(combined.caloriesInfo);
+    expect(reopened.caloriesInfo).toMatchObject({ totalKcal: 2400, cookedWeightGrams: 1000, kcal: cake ? 300 : 240 });
+    expect(reopened.caloriesUnavailableReason).toBeUndefined();
+    expect(composeRecipes({ ...portable, ingredients: ["Quantités modifiées"] }, []).caloriesInfo).toBeUndefined();
+  });
+
   it("ne compte qu’une fois une dépendance partagée dans un diamant", () => {
     const base = analyzed(recipe(1, { linkedRecipeIds: [id(2), id(3)] }));
     const left = analyzed(recipe(2, { linkedRecipeIds: [id(4)] }));
