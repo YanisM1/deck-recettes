@@ -64,7 +64,7 @@ export function useRateLimit(key: string, now: number) {
     if (requests.size >= 1000) requests.delete(requests.keys().next().value!);
     requests.set(id, { start: now, count: 1 }); return;
   }
-  if (bucket.count >= 10) throw new AnalysisError(429, "RATE_LIMITED");
+  if (bucket.count >= 10) throw new AnalysisError(429, "REQUEST_RATE_LIMITED");
   bucket.count++;
 }
 export async function authorize(request: Request, env: NodeJS.ProcessEnv, fetcher: typeof fetch, allowLocal: boolean) {

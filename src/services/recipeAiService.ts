@@ -28,6 +28,8 @@ export async function analyzeRecipeAi(input: AnalysisInput & { caloriesInfo?: Ca
         PROVIDER_ERROR: "Google Gemini a rencontré une erreur temporaire.",
         UNAVAILABLE: "Le service Gemini est temporairement indisponible.",
         RATE_LIMITED: "La limite temporaire de calcul a été atteinte.",
+        REQUEST_RATE_LIMITED: "Ce carnet a atteint sa limite temporaire de calcul. Réessayez dans quelques minutes.",
+        GEMINI_RATE_LIMITED: "Google Gemini a atteint sa limite de calcul temporaire ; l’estimation locale reste disponible.",
         TIMEOUT: "Le calcul a dépassé son délai de réponse.",
       };
       const providerStatus = /^PROVIDER_ERROR_(\d{3})$/.exec(code)?.[1];

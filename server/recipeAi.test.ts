@@ -85,6 +85,15 @@ describe("API calories et variantes en un appel", () => {
     expect(JSON.stringify(log.mock.calls)).not.toContain("down");
     expect(network).toHaveBeenCalledTimes(4);
   });
+  it("distingue la limite de Google de celle appliquée au carnet DeckChef", async () => {
+    const network = vi.fn()
+      .mockResolvedValueOnce(Response.json({ models: [{ name: "models/gemini-3.5-flash-lite", supportedGenerationMethods: ["generateContent"] }] }))
+      .mockResolvedValueOnce(Response.json({ error: { message: "quota exceeded" } }, { status: 429 }));
+    const result = await handleRecipeAi(request(), options(network));
+    expect(result.status).toBe(429);
+    expect(await result.json()).toEqual({ code: "GEMINI_RATE_LIMITED" });
+    expect(network).toHaveBeenCalledTimes(2);
+  });
   it("retourne un code explicite et ne journalise ni la clé ni le corps fournisseur", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const secret = "test-private-server-key";

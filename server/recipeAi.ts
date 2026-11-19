@@ -118,7 +118,7 @@ export async function handleRecipeAi(request: Request, options: Options = {}): P
       const missingModel = upstream.status === 404 || (upstream.status === 400 && /model|not found|not supported/i.test(providerMessage));
       const retryableProvider = missingModel || upstream.status >= 500;
       if (!retryableProvider || candidateModel === models.at(-1)) {
-        if (upstream.status === 429) throw new AnalysisError(429, "RATE_LIMITED");
+        if (upstream.status === 429) throw new AnalysisError(429, "GEMINI_RATE_LIMITED");
         if (missingModel) {
           console.error("recipe-ai Gemini model unavailable", { status: upstream.status, model: candidateModel });
           throw new AnalysisError(502, "MODEL_UNAVAILABLE_" + candidateModel.replace(/[^a-z0-9-]/gi, "-") + "_" + upstream.status);
