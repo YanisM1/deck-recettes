@@ -32,6 +32,8 @@ export async function analyzeRecipeAi(input: AnalysisInput & { caloriesInfo?: Ca
       };
       const providerStatus = /^PROVIDER_ERROR_(\d{3})$/.exec(code)?.[1];
       if (providerStatus) messages[code] = "Google Gemini a répondu avec l’erreur HTTP " + providerStatus + ".";
+      const unavailableModel = /^MODEL_UNAVAILABLE_(.+)_(\d{3})$/.exec(code);
+      if (unavailableModel) messages[code] = "Le modèle Gemini " + unavailableModel[1] + " est indisponible (HTTP " + unavailableModel[2] + ").";
       reason = messages[code] ?? (response.status >= 500
         ? "Le service Gemini est temporairement indisponible."
         : `Le service de calcul a répondu avec l’erreur HTTP ${response.status}.`);

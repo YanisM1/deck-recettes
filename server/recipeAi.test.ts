@@ -22,35 +22,68 @@ describe("API calories et variantes en un appel", () => {
     expect(parseGeminiJson("Réponse structurée:\n{\"base\":1}")).toEqual({ base: 1 });
     expect(() => parseGeminiJson(fence + "json\ncassé\n" + fence)).toThrow();
   });
+  it("choisit dans la liste du compte un modèle Flash réellement disponible", async () => {
+    const network = vi.fn()
+      .mockResolvedValueOnce(Response.json({ models: [{ name: "models/gemini-2.5-flash-001", supportedGenerationMethods: ["generateContent"] }] }))
+      .mockResolvedValueOnce(wrap(response()));
+    const result = await handleRecipeAi(request(), options(network));
+    expect(result.status).toBe(200);
+    expect((await result.json()).model).toBe("gemini-2.5-flash-001");
+    expect(network.mock.calls[1][0]).toContain("/models/gemini-2.5-flash-001:generateContent");
+  });
+  it("signale une clé API refusée sans révéler le message Google", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const network = vi.fn().mockResolvedValue(Response.json({ error: { message: "API key not valid. private value" } }, { status: 400 }));
+    const result = await handleRecipeAi(request(), options(network));
+    expect(result.status).toBe(503);
+    expect(await result.json()).toEqual({ code: "INVALID_API_KEY" });
+    expect(JSON.stringify(log.mock.calls)).not.toContain("private value");
+    expect(network).toHaveBeenCalledOnce();
+  });
   it("bascule sur un modèle actif si le modèle configuré répond 404", async () => {
     const network = vi.fn()
+      .mockResolvedValueOnce(Response.json({ models: [
+        { name: "models/gemini-old-model", supportedGenerationMethods: ["generateContent"] },
+        { name: "models/gemini-2.5-flash", supportedGenerationMethods: ["generateContent"] },
+      ] }))
       .mockResolvedValueOnce(Response.json({ error: { message: "model not found" } }, { status: 404 }))
       .mockResolvedValueOnce(wrap(response()));
     const result = await handleRecipeAi(request(), { ...options(network), env: { GEMINI_MODEL: "gemini-old-model" } });
     expect(result.status).toBe(200);
     expect((await result.json()).model).toBe("gemini-2.5-flash");
     expect(network.mock.calls.map(call => call[0])).toEqual([
+      expect.stringContaining("/models?pageSize=1000"),
       expect.stringContaining("/models/gemini-old-model:generateContent"),
       expect.stringContaining("/models/gemini-2.5-flash:generateContent"),
     ]);
   });
   it("réessaie avec le modèle de secours si Gemini répond 503", async () => {
     const network = vi.fn()
+      .mockResolvedValueOnce(Response.json({ models: [
+        { name: "models/gemini-3.5-flash-lite", supportedGenerationMethods: ["generateContent"] },
+        { name: "models/gemini-2.5-flash", supportedGenerationMethods: ["generateContent"] },
+      ] }))
       .mockResolvedValueOnce(Response.json({ error: { message: "temporarily unavailable" } }, { status: 503 }))
       .mockResolvedValueOnce(wrap(response()));
     const result = await handleRecipeAi(request(), options(network));
     expect(result.status).toBe(200);
     expect((await result.json()).model).toBe("gemini-2.5-flash");
-    expect(network).toHaveBeenCalledTimes(2);
+    expect(network).toHaveBeenCalledTimes(3);
   });
   it("expose seulement le statut final du fournisseur quand tous les modèles sont en panne", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    const network = vi.fn().mockResolvedValue(Response.json({ error: { message: "down" } }, { status: 503 }));
+    const network = vi.fn()
+      .mockResolvedValueOnce(Response.json({ models: [
+        { name: "models/gemini-3.5-flash-lite", supportedGenerationMethods: ["generateContent"] },
+        { name: "models/gemini-2.5-flash", supportedGenerationMethods: ["generateContent"] },
+        { name: "models/gemini-2.0-flash", supportedGenerationMethods: ["generateContent"] },
+      ] }))
+      .mockResolvedValue(Response.json({ error: { message: "down" } }, { status: 503 }));
     const result = await handleRecipeAi(request(), options(network));
     expect(result.status).toBe(502);
     expect(await result.json()).toEqual({ code: "PROVIDER_ERROR_503" });
     expect(JSON.stringify(log.mock.calls)).not.toContain("down");
-    expect(network).toHaveBeenCalledTimes(3);
+    expect(network).toHaveBeenCalledTimes(4);
   });
   it("retourne un code explicite et ne journalise ni la clé ni le corps fournisseur", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -71,8 +104,9 @@ describe("API calories et variantes en un appel", () => {
     const data = await result.json();
     expect(isRecipeAiData(data, cake)).toBe(true);
     expect(data).toMatchObject({ source: "gemini", kind: "sucre", caloriesInfo: { kcal: 200, basis: "part", parts: 8 }, panSizesMap: { "20": { caloriesInfo: { kcal: 200 } }, "26": { caloriesInfo: { kcal: 260 } }, "28": { caloriesInfo: { kcal: 280 } } } });
-    expect(network).toHaveBeenCalledTimes(1);
-    const call = network.mock.calls[0];
+    expect(network).toHaveBeenCalledTimes(2);
+    expect(network.mock.calls[0][0]).toContain("/models?pageSize=1000");
+    const call = network.mock.calls[1];
     expect(call[0]).not.toContain("test-private-server-key");
     expect(call[1].headers["x-goog-api-key"]).toBe("test-private-server-key");
     const sent = JSON.parse(call[1].body);
@@ -129,10 +163,13 @@ describe("API calories et variantes en un appel", () => {
   });
   it("contrôle la clé du carnet par RLS et rejette les autres origines avant Gemini", async () => {
     const req = request(), key = req.headers.get("x-deckchef-key");
-    const network = vi.fn().mockResolvedValueOnce(Response.json([{ sync_key: key }])).mockResolvedValueOnce(wrap(response()));
+    const network = vi.fn().mockResolvedValueOnce(Response.json([{ sync_key: key }]))
+      .mockResolvedValueOnce(Response.json({ models: [{ name: "models/gemini-3.5-flash-lite", supportedGenerationMethods: ["generateContent"] }] }))
+      .mockResolvedValueOnce(wrap(response()));
     const env = { VITE_SUPABASE_URL: "https://db.test", VITE_SUPABASE_ANON_KEY: "public-key", VERCEL: "1" };
     expect((await handleRecipeAi(req, { ...options(network), env })).status).toBe(200);
     expect(network.mock.calls[0][0]).toContain("/recipe_collections?");
+    expect(network.mock.calls[1][0]).toContain("/models?pageSize=1000");
     const denied = vi.fn().mockResolvedValue(Response.json([]));
     expect((await handleRecipeAi(request(), { ...options(denied), env })).status).toBe(401);
     expect(denied).toHaveBeenCalledTimes(1);

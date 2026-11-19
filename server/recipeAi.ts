@@ -43,6 +43,37 @@ export function parseGeminiJson(text: string): unknown {
     catch { throw new AnalysisError(502, "INVALID_RESPONSE"); }
   }
 }
+async function discoverGeminiModels(apiKey: string, fetcher: typeof fetch, signal: AbortSignal): Promise<string[]> {
+  try {
+    const response = await fetcher("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000", {
+      headers: { "x-goog-api-key": apiKey }, cache: "no-store",
+      signal: AbortSignal.any([signal, AbortSignal.timeout(8000)]),
+    });
+    if (!response.ok) {
+      let providerMessage = "";
+      try { providerMessage = String((await response.clone().json())?.error?.message ?? ""); } catch { /* Le statut suffit si le corps est vide. */ }
+      if (response.status === 401 || response.status === 403 || (response.status === 400 && /api.?key|key.*not valid|invalid.*key/i.test(providerMessage)))
+        throw new AnalysisError(503, "INVALID_API_KEY");
+      console.error("recipe-ai Gemini model discovery failed", { status: response.status });
+      return [];
+    }
+    const payload = await response.clone().json() as { models?: { name?: unknown; supportedGenerationMethods?: unknown }[] };
+    return Array.isArray(payload.models) ? payload.models.flatMap(row => {
+      if (typeof row?.name !== "string" || !row.name.startsWith("models/gemini-") || !Array.isArray(row.supportedGenerationMethods) || !row.supportedGenerationMethods.includes("generateContent")) return [];
+      return [row.name.slice("models/".length)];
+    }) : [];
+  } catch (error) {
+    if (error instanceof AnalysisError) throw error;
+    console.error("recipe-ai Gemini model discovery failed", { name: error instanceof Error ? error.name : "UnknownError" });
+    return [];
+  }
+}
+function candidateGeminiModels(configured: string, discovered: string[]): string[] {
+  const preferred = [configured, DEFAULT_GEMINI_MODEL, "gemini-2.5-flash", "gemini-2.0-flash"];
+  const activePreferred = discovered.length ? preferred.filter(model => discovered.includes(model)) : preferred;
+  const activeFlash = discovered.filter(model => /gemini-.*flash/i.test(model) && !/(preview|experimental|-exp)/i.test(model));
+  return [...new Set([...activePreferred, ...activeFlash, ...(discovered.length ? [] : ["gemini-2.5-flash", "gemini-2.0-flash"])])].slice(0, 6);
+}
 function calories(raw: unknown, input: AnalysisInput, model: string, timestamp: string): CaloriesInfo {
   if (!raw || typeof raw !== "object") throw new AnalysisError(502, "INVALID_RESPONSE");
   const row = raw as Record<string, unknown>, sweet = recipeAiKind(input) === "sucre";
@@ -67,7 +98,9 @@ export async function handleRecipeAi(request: Request, options: Options = {}): P
     useRateLimit(notebook, now());
     const configuredModel = env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
     if (!/^gemini-[a-z0-9.-]{1,80}$/.test(configuredModel)) throw new AnalysisError(503, "NOT_CONFIGURED");
-    const models = [...new Set([configuredModel, "gemini-2.5-flash", "gemini-2.0-flash"])];
+    const discoveredModels = await discoverGeminiModels(apiKey, fetcher, request.signal);
+    const models = candidateGeminiModels(configuredModel, discoveredModels);
+    if (!models.length) throw new AnalysisError(503, "MODEL_UNAVAILABLE");
     let model = configuredModel, upstream: Response | undefined;
     for (const candidateModel of models) {
       upstream = await fetcher(`https://generativelanguage.googleapis.com/v1beta/models/${candidateModel}:generateContent`, {
@@ -78,17 +111,17 @@ export async function handleRecipeAi(request: Request, options: Options = {}): P
       if (upstream.ok) { model = candidateModel; break; }
       let providerMessage = "";
       try { providerMessage = String((await upstream.clone().json())?.error?.message ?? ""); } catch { /* Examine le statut même si l’API renvoie un corps vide. */ }
+      if ((upstream.status === 401 || upstream.status === 403) || (upstream.status === 400 && /api.?key|key.*not valid|invalid.*key/i.test(providerMessage))) {
+        console.error("recipe-ai Gemini authorization failed", { status: upstream.status, model: candidateModel });
+        throw new AnalysisError(503, "INVALID_API_KEY");
+      }
       const missingModel = upstream.status === 404 || (upstream.status === 400 && /model|not found|not supported/i.test(providerMessage));
       const retryableProvider = missingModel || upstream.status >= 500;
       if (!retryableProvider || candidateModel === models.at(-1)) {
         if (upstream.status === 429) throw new AnalysisError(429, "RATE_LIMITED");
-        if (upstream.status === 401 || upstream.status === 403) {
-          console.error("recipe-ai Gemini authorization failed", { status: upstream.status, model: candidateModel });
-          throw new AnalysisError(503, "INVALID_API_KEY");
-        }
         if (missingModel) {
           console.error("recipe-ai Gemini model unavailable", { status: upstream.status, model: candidateModel });
-          throw new AnalysisError(502, "MODEL_UNAVAILABLE");
+          throw new AnalysisError(502, "MODEL_UNAVAILABLE_" + candidateModel.replace(/[^a-z0-9-]/gi, "-") + "_" + upstream.status);
         }
         const code = upstream.status === 400 ? "INVALID_REQUEST" : upstream.status >= 500 ? "PROVIDER_ERROR_" + upstream.status : "UNAVAILABLE";
         console.error("recipe-ai Gemini request failed", { status: upstream.status, model: candidateModel, code });
