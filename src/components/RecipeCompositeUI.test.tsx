@@ -56,7 +56,9 @@ describe("recettes liées dans le lecteur", () => {
     expect(props.shared).toBe(false);
     expect(props.recipe.linkedRecipeIds).toBeUndefined();
     expect(props.recipe.ingredients).toEqual(["118,34 g de farine", "59,17 g de chocolat"]);
-    expect(props.recipe.steps).toHaveLength(3);
+    expect(props.recipe.steps.slice(0, 3)).toEqual([base.steps[0], garnish.steps[0], "Assembler les préparations selon les indications de la recette de base."]);
+    expect(props.recipe.steps.slice(3)).toHaveLength(2);
+    expect(props.recipe.steps.slice(3).every(step => step.startsWith("Conseil d’adaptation :"))).toBe(true);
     expect(props.recipe.servings).toBe(2);
     expect(props.recipe.panSize).toBe(20);
     expect(props.recipe.caloriesInfo).toBeUndefined();

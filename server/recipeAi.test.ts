@@ -45,6 +45,31 @@ describe("API calories et variantes en un appel", () => {
     expect(Object.keys(data.servingsMap)).toHaveLength(8);
     expect(data.panSizesMap).toBeUndefined();
   });
+  it.each([cake, dish])("conserve une unique estimation et les ingrédients exacts pour la variante d’origine de $title", async input => {
+    const raw = response(input), sweet = input.category === "sucre" || input.isCake;
+    const baseTarget = sweet ? input.panSize ?? 26 : input.servings ?? 2;
+    raw.variants[String(baseTarget)] = { ...raw.variants[String(baseTarget)], ingredients: ["300 g de farine", "3 œufs"], totalKcal: 3000, cookedWeightGrams: 1000 };
+    const result = await handleRecipeAi(request(input), options(vi.fn().mockResolvedValue(wrap(raw))));
+    expect(result.status).toBe(200);
+    const data = await result.json(), map = sweet ? data.panSizesMap : data.servingsMap;
+    expect(map[String(baseTarget)].ingredients).toEqual(input.ingredients);
+    expect(map[String(baseTarget)].caloriesInfo).toEqual(data.caloriesInfo);
+    const another = sweet ? 28 : 3;
+    expect(map[String(another)].caloriesInfo.totalKcal).toBe(raw.variants[String(another)].totalKcal);
+  });
+  it("garde une variante réellement rééquilibrée quand la base contient une pièce fractionnaire", async () => {
+    const input = { ...dish, ingredients: ["1½ steak", "100 g de riz"] };
+    const raw = response(input);
+    for (const variant of Object.values(raw.variants)) variant.ingredients = ["2 steaks", "100 g de riz"];
+    raw.variants["2"].totalKcal = 240;
+    raw.variants["2"].cookedWeightGrams = 120;
+    const result = await handleRecipeAi(request(input), options(vi.fn().mockResolvedValue(wrap(raw))));
+    expect(result.status).toBe(200);
+    const data = await result.json();
+    expect(data.servingsMap["2"].ingredients).toEqual(["2 steaks", "100 g de riz"]);
+    expect(data.servingsMap["2"].caloriesInfo.totalKcal).toBe(240);
+    expect(data.caloriesInfo.totalKcal).toBe(1600);
+  });
   it("refuse une table incomplète, des fractions de pièces ou une nutrition invalide", async () => {
     const missing = response(dish); delete (missing.variants as Record<string, unknown>)["8"];
     const pieces = response(dish); pieces.variants["3"].ingredients = ["1,5 steak", "150 g de riz"];
@@ -66,6 +91,25 @@ describe("API calories et variantes en un appel", () => {
     const foreign = vi.fn();
     expect((await handleRecipeAi(request(cake, { origin: "https://foreign.test" }), options(foreign))).status).toBe(403);
     expect(foreign).not.toHaveBeenCalled();
+  });
+  it("rejette les fractions Gemini de pièces avec adjectif sans modifier les ingrédients après calcul", async () => {
+    for (const line of ["1.5 petit oignon", "0.75 avocat", "2.46 citron, sel et poivre"]) {
+      const raw = response(dish); raw.variants["3"].ingredients = [line, "150 g de riz"];
+      const result = await handleRecipeAi(request(dish), options(vi.fn().mockResolvedValue(wrap(raw))));
+      expect(result.status).toBe(502);
+      expect(await result.json()).toEqual({ code: "INVALID_RESPONSE" });
+    }
+  });
+  it("conserve les demi-légumes usuels de Gemini avec leur nutrition calculée", async () => {
+    const input = { ...dish, ingredients: ["1 petit concombre", "1 avocat", "1 citron, sel et poivre"] };
+    const raw = response(input);
+    for (const [target, variant] of Object.entries(raw.variants)) variant.ingredients = [`${Number(target) / 2} petit concombre`, `${Number(target) / 2} avocat`, `${Number(target) / 2} citron, sel et poivre`];
+    const result = await handleRecipeAi(request(input), options(vi.fn().mockResolvedValue(wrap(raw))));
+    expect(result.status).toBe(200);
+    const data = await result.json();
+    expect(data.servingsMap["1"].ingredients).toEqual(["0.5 petit concombre", "0.5 avocat", "0.5 citron, sel et poivre"]);
+    expect(data.servingsMap["3"].ingredients).toEqual(["1.5 petit concombre", "1.5 avocat", "1.5 citron, sel et poivre"]);
+    expect(data.servingsMap["3"].caloriesInfo.totalKcal).toBe(raw.variants["3"].totalKcal);
   });
   it("expose seulement une erreur neutre sans clé et sur réponse tronquée", async () => {
     const network = vi.fn();

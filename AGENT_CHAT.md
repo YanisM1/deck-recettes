@@ -1,5 +1,15 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-19 — Calories visibles et variantes instantanées, étape 4/4 : fluidité et validation finale
+
+- Étape 3 publiée : 1e3c025, dpl_712iGvkvsc4WGxCZv5D4bgoYNBSc, READY ; 237 tests et build sans .env.local ni gemini-key.txt. Bloc sous le titre, anciennes recettes et contrôles instantanés disponibles en production.
+- App conserve la liste filtrée et le callback d’ouverture entre les états de l’analyse. Cartes, Livre, contenu de page et images mémoïsés ; décodage des images asynchrone. Aucun réseau ajouté aux gestes ou aux sélections ; moteur refs/RAF, transforms/opacité et cadre plein écran inchangés. Régressions de rendu : parent sans changement ne redessine pas les images, mais une vraie modification est affichée.
+- Repli culinaire affiné : fractions mixtes, pièces avec adjectifs, œufs/steaks/oignons entiers, doses à la cuillère par quarts. Légumes divisibles et agrumes acceptent les demis usuels ; valeurs arbitraires telles que 2,46 citrons refusées. Les fractions pesées et plages explicitement ambiguës sont préservées sans interprétation hasardeuse. Variante de base Gemini réutilise les ingrédients et calories exacts de la base ; aucune quantité adaptée n’est corrigée après son calcul nutritionnel.
+- Réponse Gemini réelle de salade vérifiée intégralement après cette distinction culinaire : HTTP200 avec huit variantes, valeurs et ingrédients inchangés. Quelques appels QA ont rencontré l’indisponibilité temporaire du fournisseur ; repli local et absence de calories inventées vérifiés. Le service de production avait déjà été validé par POST réel ; contrôle de la dernière version après déploiement.
+- Copies partagées et photos des variantes incluent les conseils de cuisson, sans modifier les étapes originales ni conserver de liens privés. Régression du moule d’une ancienne recette salée sans isCake explicite corrigée. Test App complet : recette sauvegardée avant résolution IA, portions/navigation actives, enrichissement conservé après fermeture du lecteur et rechargement.
+- 279 tests/40 fichiers avant checkpoint final. Validation complète sans les deux fichiers secrets, contrôle du bundle, restauration locale, journal, commit/push main et quatrième déploiement Vercel CLI. README et VERIFICATION actualisés. Configuration : GEMINI_API_KEY serveur en local et secrets Vercel Production/Preview, modèle gemini-3.5-flash-lite ; aucune clé committée.
+- Limites honnêtes : fermeture du transport navigateur avant le parcours visuel complémentaire et la sauvegarde de capture ; sélecteurs de moules et partage couverts par tests automatisés et appels réels. Pas de mesure matérielle 120 Hz ni essai iPhone physique. Supabase : aucun nouvel avis, données et politiques des autres applications préservées.
+
 ## 2026-11-19 — Calories visibles et variantes instantanées, étape 3/4 : interface
 
 - Étape 2 publiée : 06e0ae5, dpl_8pmd9vmd9yjENfQwpgcPEoBqAxxU, READY ; 230 tests et build sans les deux fichiers secrets.

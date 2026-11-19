@@ -2,9 +2,9 @@ import type { Recipe } from "../types";
 import { composeRecipes, type ComposedRecipe } from "./compositeRecipes";
 import { hasFreshCalories, recipeFingerprint } from "./calorieAnalysis";
 import { createLocalRecipeAi, scaleRecipeIngredients } from "./recipeAiFallback";
-import { hasFreshRecipeAi, recipeAiVariantInput, PAN_TARGETS, SERVING_TARGETS, type RecipeAiData } from "./recipeAiTypes";
+import { hasFreshRecipeAi, recipeAiKind, recipeAiVariantInput, PAN_TARGETS, SERVING_TARGETS, type RecipeAiData } from "./recipeAiTypes";
 
-export const usesPanSizes = (recipe: Recipe) => recipe.isCake === true || recipe.category === "sucre";
+export const usesPanSizes = (recipe: Recipe) => recipeAiKind(recipe) === "sucre";
 export type RecipeDisplay = {
   recipe: Recipe;
   composed: ComposedRecipe;

@@ -6,7 +6,7 @@ import { PanBadge } from "./PanBadge";
 import { CaloriesBadge } from "./CaloriesBadge";
 import { Modal } from "./Modal";
 import { RecipeShareDialog } from "./RecipeShareDialog";
-import { hasFreshCalories } from "../services/calorieAnalysis";
+import { hasFreshCalories, recipeFingerprint } from "../services/calorieAnalysis";
 import { createRecipeDisplayCache } from "../services/recipeDisplay";
 const NO_RECIPES: Recipe[] = [];
 export function RecipeReader({
@@ -48,6 +48,13 @@ export function RecipeReader({
   const displayedRecipe = display.recipe;
   const composed = display.composed;
   const calories = hasFreshCalories(displayedRecipe) ? displayedRecipe.caloriesInfo : undefined;
+  const sharedRecipe = useMemo(() => {
+    if (!display.adapted) return recipe;
+    const copy: Recipe = { ...displayedRecipe,
+      steps: [...displayedRecipe.steps, ...display.cookingNotes.map(note => `Conseil d’adaptation : ${note}`)] };
+    if (hasFreshCalories(displayedRecipe)) copy.caloriesInfo = { ...displayedRecipe.caloriesInfo!, fingerprint: recipeFingerprint(copy) };
+    return copy;
+  }, [display, displayedRecipe, recipe]);
   const sweet = displayCache.kind === "sucre";
   const hasLinks = !!recipe.linkedRecipeIds?.length;
   const canShare = !composed.warnings.some(warning => warning.type !== "duplicate");
@@ -228,7 +235,7 @@ export function RecipeReader({
       </article>
       {showShare && ref.current && (
         <RecipeShareDialog
-          recipe={display.adapted ? displayedRecipe : recipe}
+          recipe={sharedRecipe}
           layout={layout}
           themeElement={ref.current}
           themeId={themeId}

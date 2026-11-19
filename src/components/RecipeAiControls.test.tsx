@@ -36,6 +36,13 @@ const savory = () => cached({ ...starterRecipes[0], servings: 2, ingredients: ["
 const sweet = () => cached({ ...starterRecipes[2], isCake: true, panSize: 26, servings: 8, ingredients: ["2 œufs", "260 g de farine"], steps: ["Mélanger puis cuire."], category: "sucre" });
 
 describe("sélections pré-calculées dans le lecteur", () => {
+  it("reconnaît le moule d’un ancien gâteau salé sans indicateur explicite", () => {
+    const recipe: Recipe = { ...starterRecipes[0], isCake: undefined, panSize: 20, ingredients: ["200 g de farine"], steps: ["Cuire au four."] };
+    render(<RecipeReader recipe={recipe} onClose={() => {}} />);
+    expect(screen.getByRole("button", { name: "Moule 20 cm" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Moule 28 cm" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "1 personne" })).not.toBeInTheDocument();
+  });
   it("affiche le bloc calorique sous le titre et les huit variantes salées sans réseau", () => {
     const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
     const recipe = savory();

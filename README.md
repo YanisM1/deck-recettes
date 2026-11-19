@@ -8,7 +8,7 @@ Le doigt utilise des événements Touch natifs, avec un écouteur touchmove non 
 
 Après la dernière recette, une vraie carte de fin ou une couverture intérieure cousue apparaît. Le bouton central revient au début ; le geste inverse ramène la dernière recette. Les trois boutons à gauche conservent le même emplacement dans les deux modes, avec rubans verticaux et icônes droites dans le Livre.
 
-Le formulaire propose « C’est un gâteau / moule » dans les deux catégories, puis 20, 26 ou 28 cm. Un badge « Moule 26 cm » apparaît sur carte, page et lecteur. Ces informations sont conservées localement et synchronisées dans `is_cake` / `pan_size`. Une ancienne base sans ces colonnes reste lisible : les recettes ordinaires se synchronisent, les informations de moule restent dans la file locale jusqu’à la migration.
+Le formulaire propose le moule d’origine 20, 26 ou 28 cm pour le sucré ; le salé peut aussi activer « C’est un gâteau / moule ». Un badge « Moule 26 cm » apparaît sur carte, page et lecteur. Ces informations sont conservées localement et synchronisées dans `is_cake` / `pan_size`. Une ancienne base sans ces colonnes reste lisible : les recettes ordinaires se synchronisent, les informations de moule restent dans la file locale jusqu’à la migration.
 
 ## Application
 
@@ -20,11 +20,17 @@ Dans Réglages, choisissez **Paquet de cartes** ou **Livre de recettes**, puis l
 
 La lecture complète présente la photo, les ingrédients cochables, les étapes numérotées, puis Modifier/Supprimer au bas du défilement. Le formulaire en trois parties accepte la photothèque et l’appareil photo, avec compression JPEG à 1000 px maximum et qualité 0,75.
 
-Le bouton **✨ Analyser les calories avec l’IA**, dans la préparation du formulaire, envoie la recette complète à Gemini via le serveur : ingrédients, proportions, étapes, cuisson, mélanges et moule éventuel. L’estimation tient compte de la masse cuite ; le badge indique les kcal par part pour un gâteau divisé en huit, ou par 100 g pour les autres plats. Les valeurs restent des estimations, accompagnées des hypothèses de l’analyse. Modifier le contenu invalide le résultat précédent. Enregistrer sans IA reste possible.
+Le bouton **✨ Calculer calories & portions (IA)** est disponible dans la fiche des recettes du carnet et dans la préparation du formulaire. La route serveur `/api/recipe-ai` envoie à Gemini la recette complète : ingrédients, proportions, étapes, cuisson, mélanges et moule d’origine. La sauvegarde est immédiate ; si nécessaire, l’analyse enrichit ensuite la recette en arrière-plan. Retourner au carnet ne l’interrompt pas. Les réponses après modification, suppression ou changement de carnet sont ignorées.
 
-**🔗 Lier une autre recette**, replié dans la première partie du formulaire, permet de sélectionner plusieurs préparations du même carnet. Le lecteur conserve leurs sections, enchaîne les étapes puis propose l’assemblage. Chaque préparation est incluse avec toutes ses quantités ; les boutons 2p/4p/6p/8p ajustent l’ensemble à partir des portions de base. Les calories additionnent les énergies et les masses cuites, sans compter deux fois une préparation commune. Un composant manquant ou une analyse périmée masque le total calorique. Les cycles sont refusés.
+Les calories sont visibles sur carte/page et dans un bloc sous le titre du lecteur : **par part, coupé en huit**, pour le sucré et les gâteaux, ou **pour 100 g du plat cuisiné final** pour les autres plats salés. Une ancienne recette porte « Calories à calculer ». Les valeurs restent des estimations, jamais des mesures exactes. Modifier le contenu invalide l’ancien résultat.
 
-Les badges composites apparaissent aussi dans les modes Cartes et Livre. Leur partage utilise une copie autonome avec les ingrédients et étapes complets, sans identifiants de recettes liées ni accès au carnet. L’export photo reprend les portions et l’estimation affichées. Les liens synchronisés ordinaires continuent d’utiliser la lecture partagée historique ; les nouvelles métadonnées sont conservées dans les copies autonomes et les photos.
+Une analyse prépare en même temps les huit variantes salées **1 à 8 personnes**, ou les trois moules **20/26/28 cm**. Les quantités, conseils de cuisson et calories sont enregistrés dans `ai_scaling_data`, Supabase et localStorage. Les boutons du lecteur lisent immédiatement cette table : aucun appel réseau au changement de portion ou de moule. Les œufs et pièces indivisibles restent entiers ; les demis usuels de légumes divisibles sont admis. Les moules suivent leur surface et les proportions sont rééquilibrées autour des œufs entiers.
+
+Sans réseau ou sans clé, un repli local déterministe prépare toutes les quantités avec une indication explicite, des pièces arrondies et des assaisonnements modérés. Il ne fabrique pas de calories inconnues. Les analyses Gemini fraîches déjà en cache restent utilisables hors ligne. L’enregistrement et la lecture fonctionnent dans tous les cas.
+
+**🔗 Lier une autre recette**, replié dans la première partie du formulaire, permet de sélectionner plusieurs préparations du même carnet. Le lecteur conserve leurs sections, enchaîne les étapes puis propose l’assemblage. Chaque préparation est incluse avec toutes ses quantités ; le sélecteur ajuste l’ensemble à partir de sa base. Chaque composant utilise sa variante au même facteur, sinon un ajustement local signalé. Les calories additionnent les énergies et les masses cuites, sans compter deux fois une préparation commune. Un composant manquant ou une analyse périmée masque le total calorique. Les cycles sont refusés.
+
+Les badges composites apparaissent aussi dans les modes Cartes et Livre. Leur partage utilise une copie autonome avec les ingrédients et étapes complets, sans identifiants de recettes liées ni accès au carnet. Les variantes partagées et les photos reprennent aussi les conseils d’adaptation et l’estimation affichés. Les liens synchronisés ordinaires continuent d’utiliser la lecture partagée historique ; les nouvelles métadonnées sont conservées dans les copies autonomes et les photos.
 
 ## Commandes
 
@@ -32,7 +38,9 @@ Les badges composites apparaissent aussi dans les modes Cartes et Livre. Leur pa
 
 Les tests et le build fonctionnent sans `.env.local` : le carnet utilise alors uniquement localStorage. Pour le cloud, configurez les deux variables publiques de `.env.example`. Aucune clé de service n’est utilisée. `scripts/checkpoint.ps1 -Message "..."` lance tests, build, commit, push Git et déploiement Vercel. La connexion GitHub utilise la CLI `gh` ; les publications passent par `git`.
 
-L’analyse demande une clé **serveur** `GEMINI_API_KEY`, ou le fichier local ignoré `gemini-key.txt`. `GEMINI_MODEL` permet de choisir le modèle ; le défaut est `gemini-3.5-flash-lite`. Ne placez aucune clé Gemini dans une variable publique. Vite expose seulement les variables `VITE_SUPABASE_`. En production, l’API vérifie le code privé du carnet avant d’appeler Gemini ; elle applique une limite de taille, un délai maximal et une limite de fréquence par instance.
+L’option `-WithoutSecrets` du checkpoint vérifie aussi l’absence de `.env.local` et `gemini-key.txt`, restaure ces fichiers dans un bloc `finally` et contrôle le bundle avant la publication. Un environnement vierge peut simplement lancer `npm test` puis `npm run build`.
+
+L’analyse demande une clé **serveur** `GEMINI_API_KEY`, ou le fichier ignoré `gemini-key.txt` en développement uniquement. La clé est configurée en secret Vercel Production/Preview et dans `.env.local`. `GEMINI_MODEL` permet de choisir le modèle ; le défaut est `gemini-3.5-flash-lite`. Ne placez aucune clé Gemini dans une variable publique. Vite expose seulement les variables `VITE_SUPABASE_`. En production, l’API vérifie le code privé du carnet avant d’appeler Gemini ; elle applique une limite de taille, un délai maximal et une limite de fréquence par instance. Le [modèle configuré](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite) prend en charge la [sortie JSON structurée](https://ai.google.dev/gemini-api/docs/structured-output).
 
 ## Données et synchronisation
 
@@ -43,6 +51,8 @@ Chaque carnet reçoit un code privé aléatoire de 64 caractères. Les règles R
 Le store sauvegarde d’abord localement et conserve une file d’opérations en attente. Il reprend après rechargement, retour réseau, focus et visibilité. Realtime Broadcast transmet uniquement des invalidations sur un canal dérivé par SHA-256 ; les données sont relues avec les règles privées. Les JPEG compressés sont stockés avec leur recette et protégés de la même façon. Un quota local plein provoque une erreur explicite avant la sauvegarde.
 
 Les migrations additives `20261118105817_deckchef_calorie_analysis.sql` et `20261118110837_deckchef_composite_recipes.sql` ajoutent `servings`, `calories_info` et `linked_recipe_ids`, puis adaptent l’initialisation DeckChef. Elles ont été appliquées après autorisation explicite, sans modifier les règles RLS ni les tables des autres applications. Le client conserve les métadonnées en attente s’il rencontre encore un ancien schéma.
+
+La migration `20261119101003_deckchef_recipe_ai_cache.sql`, appliquée de façon ciblée via la CLI, ajoute les quatre champs demandés `calories_value`, `calories_unit`, `calories_note`, `ai_scaling_data` et conserve cette même isolation. Les trois scalaires sont des projections de l’analyse fraîche, pas une seconde source de vérité.
 
 Quatre exemples apparaissent à la première ouverture. Le Reset Total nécessite deux confirmations et vide uniquement le carnet courant. Un carnet vidé reste vide, même sur un nouvel appareil.
 

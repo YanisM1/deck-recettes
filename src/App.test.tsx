@@ -65,6 +65,7 @@ it("attend Supabase puis ouvre la recette partagée sans droit de modification m
   expect(fetchRecipe).toHaveBeenCalledWith(recipe.id, token, expect.any(AbortSignal));
   expect(screen.queryByRole("button", { name: "Modifier la recette" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Supprimer la recette" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "✨ Calculer calories & portions (IA)" })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Retour aux recettes" }));
   expect(window.location.search + window.location.hash).toBe("");
   expect(screen.getByRole("button", { name: `Lire ${local.title}` })).toBeInTheDocument();

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type CSSProperties } from "react";
+import { useCallback, useLayoutEffect, useMemo, useState, type CSSProperties } from "react";
 import { Settings as SettingsIcon, ChefHat } from "lucide-react";
 import { Settings } from "./components/Settings";
 import { themes, usePreferences, inkOn } from "./services/preferences";
@@ -32,7 +32,8 @@ export default function App() {
     setSelectedId(null);
     if (shareRoute.route) shareRoute.close();
   }
-  const visible = filterRecipes(recipes.recipes, filters);
+  const visible = useMemo(() => filterRecipes(recipes.recipes, filters), [recipes.recipes, filters]);
+  const openRecipe = useCallback((recipe: Recipe) => setSelectedId(recipe.id), []);
   useLayoutEffect(() => {
     document.documentElement.style.setProperty("--bg-main", theme.bg);
     document.documentElement.style.colorScheme = theme.dark ? "dark" : "light";
@@ -93,14 +94,14 @@ export default function App() {
             key={`book-${visible.map((r) => r.id).join("|")}`}
             recipes={visible}
             allRecipes={recipes.recipes}
-            onOpen={(recipe) => setSelectedId(recipe.id)}
+            onOpen={openRecipe}
           />
         ) : (
           <CardDeck
             key={`cards-${visible.map((r) => r.id).join("|")}`}
             recipes={visible}
             allRecipes={recipes.recipes}
-            onOpen={(recipe) => setSelectedId(recipe.id)}
+            onOpen={openRecipe}
           />
         )
       ) : (

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { ChefHat } from "lucide-react";
-export function RecipeImage({
+export const RecipeImage = memo(function RecipeImage({
   src,
   alt,
   className = "",
@@ -20,6 +20,7 @@ export function RecipeImage({
       alt={alt}
       className={className}
       draggable={false}
+      decoding="async"
       onError={() => setFailed(true)}
     />
   ) : (
@@ -32,4 +33,4 @@ export function RecipeImage({
       <span>À savourer</span>
     </div>
   );
-}
+});

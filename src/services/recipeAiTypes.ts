@@ -28,11 +28,18 @@ export function recipeAiVariantInput(input: AnalysisInput, variant: RecipeAiVari
     : { ...input, ingredients: variant.ingredients, servings: target };
 }
 export function hasFractionalIndivisible(line: string): boolean {
-  const match = /^\s*(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|[¼½¾⅓⅔⅛])\s*(?:de\s+|d[’']\s*)?(œufs?|oeufs?|steaks?|oignons?|filets?|escalopes?|tomates?|pommes(?: de terre)?|courgettes?|carottes?|gousses?)\b/i.exec(line);
+  const match = /^\s*(\d+\s+\d+\s*\/\s*\d+|\d+\s*[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s*(?:de\s+|d[’']\s*)?(?:(?:petit(?:e)?s?|gros(?:se)?s?|grand(?:e)?s?|moyen(?:ne)?s?)\s+)?(œufs?|oeufs?|steaks?|oignons?|filets?|escalopes?|tomates?|pommes(?: de terre)?|courgettes?|carottes?|gousses?|citrons?|avocats?|concombres?|poivrons?|brocolis?|oranges?|aubergines?)\b/i.exec(line);
   if (!match) return false;
   const text = match[1].replace(",", ".");
-  const value = text.includes("/") ? text.split("/").map(Number).reduce((a, b) => a / b) : Number(text);
-  return !Number.isInteger(value);
+  const fraction = ({ "¼": .25, "½": .5, "¾": .75, "⅓": 1 / 3, "⅔": 2 / 3, "⅛": .125, "⅜": .375, "⅝": .625, "⅞": .875 } as Record<string, number>)[text.slice(-1)];
+  const mixed = /^(\d+)\s+(\d+)\s*\/\s*(\d+)$/.exec(text);
+  const value = fraction !== undefined ? Number(text.slice(0, -1).trim()) + fraction
+    : mixed ? (Number(mixed[3]) > 0 ? Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]) : NaN)
+    : text.includes("/") ? text.split("/").map(Number).reduce((a, b) => a / b) : Number(text);
+  const strictlyWhole = /^(?:œufs?|oeufs?|steaks?|oignons?|filets?|escalopes?|gousses?)$/i.test(match[2]);
+  // A half avocado/lemon is a useful culinary amount. Protein pieces, eggs,
+  // onions and garlic stay whole; other matched vegetables allow halves only.
+  return !Number.isInteger(value * (strictlyWhole ? 1 : 2));
 }
 export function isRecipeAiData(value: unknown, input?: AnalysisInput): value is RecipeAiData {
   if (!record(value) || value.version !== 1 || !["gemini", "local"].includes(String(value.source)) || !["sale", "sucre"].includes(String(value.kind))) return false;

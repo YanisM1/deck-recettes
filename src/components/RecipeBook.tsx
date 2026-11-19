@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, BookOpenCheck, MoveHorizontal } from "lucide-react";
-import { useRef, type Ref } from "react";
+import { memo, useRef, type Ref } from "react";
 import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
@@ -7,7 +7,7 @@ import { CaloriesBadge } from "./CaloriesBadge";
 import { MOTION_TRANSITION, useDirectNavigation } from "../hooks/useDirectNavigation";
 import { composeRecipes } from "../services/compositeRecipes";
 
-function BookPage({ recipe, allRecipes }: { recipe: Recipe; allRecipes: Recipe[] }) {
+const BookPage = memo(function BookPage({ recipe, allRecipes }: { recipe: Recipe; allRecipes: Recipe[] }) {
   const composite = recipe.linkedRecipeIds?.length ? composeRecipes(recipe, allRecipes) : undefined;
   const calorieRecipe = composite ? { ...recipe, ingredients: composite.ingredients, steps: composite.steps, caloriesInfo: composite.caloriesInfo } : recipe;
   return (
@@ -36,7 +36,7 @@ function BookPage({ recipe, allRecipes }: { recipe: Recipe; allRecipes: Recipe[]
       </p>
     </div>
   );
-}
+});
 
 function BookEnd({ active, reset }: { active: boolean; reset: () => void }) {
   return (
@@ -80,7 +80,7 @@ function RecipeLeaf({ recipe, active, leafRef, offset, onOpen, allRecipes }: {
   );
 }
 
-export function RecipeBook({ recipes, onOpen, allRecipes = recipes }: {
+export const RecipeBook = memo(function RecipeBook({ recipes, onOpen, allRecipes = recipes }: {
   recipes: Recipe[];
   allRecipes?: Recipe[];
   onOpen: (recipe: Recipe) => void;
@@ -141,4 +141,4 @@ export function RecipeBook({ recipes, onOpen, allRecipes = recipes }: {
       </p></div>
     </>
   );
-}
+});

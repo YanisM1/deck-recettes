@@ -2,23 +2,32 @@ import { hasFreshCalories, normalizeAnalysisInput, recipeFingerprint, type Analy
 import { PAN_TARGETS, SERVING_TARGETS, recipeAiKind, recipeAiVariantInput, type RecipeAiData, type RecipeAiVariant } from "./recipeAiTypes.js";
 
 const format = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
-const fractions: Record<string, number> = { "¼": .25, "½": .5, "¾": .75, "⅓": 1 / 3, "⅔": 2 / 3, "⅛": .125 };
-const prefix = /^(\s*)(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|[¼½¾⅓⅔⅛])(\s*)(.*)$/;
-const indivisible = /^(?:de\s+|d[’']\s*)?(?:œufs?|oeufs?|steaks?|oignons?|filets?|escalopes?|tomates?|pommes(?: de terre)?|courgettes?|carottes?|gousses?)\b/i;
-const egg = /^(?:de\s+|d[’']\s*)?(?:œufs?|oeufs?)\b/i;
+const fractions: Record<string, number> = { "¼": .25, "½": .5, "¾": .75, "⅓": 1 / 3, "⅔": 2 / 3, "⅛": .125, "⅜": .375, "⅝": .625, "⅞": .875 };
+const prefix = /^(\s*)(\d+\s+\d+\s*\/\s*\d+|\d+\s*[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])(\s*)(.*)$/;
+const indivisible = /^(?:de\s+|d[’']\s*)?(?:(?:petit(?:e)?s?|gros(?:se)?s?|grand(?:e)?s?|moyen(?:ne)?s?)\s+)?(?:œufs?|oeufs?|steaks?|oignons?|filets?|escalopes?|tomates?|pommes(?: de terre)?|courgettes?|carottes?|gousses?|citrons?|avocats?|concombres?|poivrons?|brocolis?|oranges?|aubergines?)\b/i;
+const egg = /^(?:de\s+|d[’']\s*)?(?:(?:petit(?:e)?s?|gros(?:se)?s?|grand(?:e)?s?|moyen(?:ne)?s?)\s+)?(?:œufs?|oeufs?)\b/i;
 const seasoning = /\b(?:sel|poivre|huile|épices?|piment|paprika|cumin|muscade|herbes?)\b/i;
+const spoon = /^(?:(?:c\.|cuil(?:l[èe]res?)?\.?)\s*(?:à\s*)?(?:soupe|caf[ée])|c[àa][sc]|c\.?\s*(?:à\s*)?[sc]\.?(?=\s|$))/i;
 function quantity(text: string) {
-  if (fractions[text] !== undefined) return fractions[text];
+  const unicode = fractions[text.slice(-1)];
+  if (unicode !== undefined) return Number(text.slice(0, -1).trim()) + unicode;
+  const mixed = /^(\d+)\s+(\d+)\s*\/\s*(\d+)$/.exec(text);
+  if (mixed) return Number(mixed[3]) > 0 ? Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]) : NaN;
   const [n, d] = text.replace(",", ".").split("/").map(Number);
-  return d ? n / d : n;
+  return d === undefined ? n : d > 0 ? n / d : NaN;
 }
 function adapt(line: string, ratio: number, sweet: boolean) {
   const match = prefix.exec(line);
-  if (!match || /^(?:[%×]|x\s*\d|\d)/i.test(match[4]) || /\d+\s*(?:g|ml|cl|kg)\s+\d/i.test(line)) return line;
+  if (!match || /^(?:[%×]|x\s*\d|\d|(?:à|au|–|—|-)\s*\d)/i.test(match[4]) || /\d+\s*(?:g|ml|cl|kg)\s+\d/i.test(line)) return line;
   const amount = quantity(match[2]);
   if (!Number.isFinite(amount) || amount <= 0) return line;
-  const factor = !sweet && seasoning.test(match[4]) ? Math.pow(ratio, .65) : ratio;
-  const result = indivisible.test(match[4]) ? Math.max(1, Math.round(amount * factor)) : Math.max(.01, amount * factor);
+  const whole = indivisible.test(match[4]);
+  if (ratio === 1 && !whole) return line;
+  // The principal whole ingredient stays a piece even when the same line also
+  // mentions seasoning (e.g. "1 citron, sel et poivre").
+  const factor = !sweet && !whole && seasoning.test(match[4]) ? Math.pow(ratio, .65) : ratio;
+  const scaled = amount * factor;
+  const result = whole ? Math.max(1, Math.round(scaled)) : spoon.test(match[4]) ? Math.max(.25, Math.round(scaled * 4) / 4) : Math.max(.01, scaled);
   return match[1] + format.format(result) + match[3] + match[4];
 }
 export function scaleRecipeIngredients(input: AnalysisInput, factor: number, options: { pastry?: boolean } = {}): string[] {

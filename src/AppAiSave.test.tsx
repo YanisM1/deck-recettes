@@ -1,0 +1,41 @@
+import { useSyncExternalStore } from "react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import App from "./App";
+import type { RecipeInput } from "./types";
+import * as sync from "./services/recipeSync";
+import { RecipeStore } from "./services/recipeStore";
+import { analyzeRecipeAi } from "./services/recipeAiService";
+import { createLocalRecipeAi } from "./services/recipeAiFallback";
+import { hasFreshRecipeAi, type RecipeAiData } from "./services/recipeAiTypes";
+import { setPreferences } from "./services/preferences";
+
+vi.mock("./services/recipeAiService", () => ({ analyzeRecipeAi: vi.fn() }));
+vi.mock("./components/RecipeForm", () => ({ RecipeForm: ({ onSave }: { onSave: (input: RecipeInput) => void }) => <button onClick={() => onSave({ title: "Sauvegarde immédiate QA", category: "sale", ingredients: ["2 steaks", "1 oignon"], steps: ["Cuire à la poêle."], image_url: "", servings: 2 })}>Enregistrer QA</button> }));
+afterEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+
+it("sauvegarde avant la réponse IA et enrichit le carnet après le retour à la navigation", async () => {
+  localStorage.clear();
+  const store = new RecipeStore(localStorage, null, "app-ai-qa");
+  vi.spyOn(sync, "getRecipeStore").mockReturnValue(store);
+  vi.spyOn(sync, "useRecipes").mockImplementation(() => useSyncExternalStore(store.subscribe, store.getSnapshot));
+  let finish!: (value: RecipeAiData) => void;
+  vi.mocked(analyzeRecipeAi).mockReturnValue(new Promise(resolve => { finish = resolve; }));
+  act(() => setPreferences({ layoutMode: "cards" }));
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: "Ajouter une recette" }));
+  fireEvent.click(screen.getByRole("button", { name: "Enregistrer QA" }));
+  const saved = store.getSnapshot().recipes.find(recipe => recipe.title === "Sauvegarde immédiate QA")!;
+  expect(saved).toBeDefined();
+  expect(saved.aiScalingData).toBeUndefined();
+  expect(screen.getByRole("dialog", { name: saved.title })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Analyse IA en cours…" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "4 personnes" }));
+  expect(screen.getByText("4 steaks")).toBeInTheDocument();
+  expect(analyzeRecipeAi).toHaveBeenCalledOnce();
+  fireEvent.click(screen.getByRole("button", { name: "Retour aux recettes" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  await act(async () => finish(createLocalRecipeAi(saved)));
+  await waitFor(() => expect(hasFreshRecipeAi(store.getSnapshot().recipes.find(recipe => recipe.id === saved.id)!)).toBe(true));
+  expect(hasFreshRecipeAi(new RecipeStore(localStorage, null, "app-ai-qa").getSnapshot().recipes.find(recipe => recipe.id === saved.id)!)).toBe(true);
+});

@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, Layers, MoveHorizontal } from "lucide-react";
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import type { Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
@@ -10,7 +10,7 @@ import { composeRecipes } from "../services/compositeRecipes";
 const stackTransform = (depth: number) => `translate3d(0, ${depth * 7}px, 0) rotate3d(0, 0, 1, ${depth * 2}deg) scale3d(${1 - depth * 0.025}, ${1 - depth * 0.025}, 1)`;
 const movingTransform = (x: number, y = Math.abs(x) * 0.04, angle = x * 0.05) => `translate3d(${x}px, ${y}px, 0) rotate3d(0, 0, 1, ${angle}deg) scale3d(1, 1, 1)`;
 
-export function CardDeck({ recipes, onOpen, allRecipes = recipes }: { recipes: Recipe[]; allRecipes?: Recipe[]; onOpen: (recipe: Recipe) => void }) {
+export const CardDeck = memo(function CardDeck({ recipes, onOpen, allRecipes = recipes }: { recipes: Recipe[]; allRecipes?: Recipe[]; onOpen: (recipe: Recipe) => void }) {
   const layers = useRef(new Map<number, HTMLDivElement>());
   const { index, go, reset, scene, gestures, isBusy } = useDirectNavigation({
     maxIndex: recipes.length, gestureSign: 1, extent: 420,
@@ -73,4 +73,4 @@ export function CardDeck({ recipes, onOpen, allRecipes = recipes }: { recipes: R
       <button className="small-icon" aria-label="Recette suivante" disabled={index === recipes.length} onClick={() => go(1)}><ArrowRight size={17} /></button>
     </div><p className="gesture-hint"><MoveHorizontal size={14} /> Glissez. Choisissez. Cuisinez.</p></div>
   </>;
-}
+});
