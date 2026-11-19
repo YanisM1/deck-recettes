@@ -724,3 +724,24 @@
 .composite-ingredient-section > h3, .composite-step-section > h3 { margin-top: 26px; font: italic 17px/1.4 Georgia, serif; color: var(--text); }
 .composite-ingredient-section .ingredient-list { margin-top: 12px; }
 .composite-step-section .steps-list { margin-top: 18px; }
+
+/* Cached recipe adaptations: all selections are local and independent of analysis. */
+.reader-nutrition { margin: 22px 0 8px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.reader-nutrition .nutrition-eyebrow { font-size: 9px; letter-spacing: 1.7px; text-transform: uppercase; margin: 0 0 10px; color: var(--muted); }
+.reader-nutrition .reader-calories-badge { border: 0; padding: 0; background: transparent; color: var(--text); font-size: 22px; font-weight: 600; line-height: 1.5; gap: 9px; }
+.reader-nutrition .reader-calories-badge svg { width: 20px; height: 20px; color: var(--accent-primary); }
+.reader-nutrition > p:not(.nutrition-eyebrow) { margin-top: 8px; font-size: 11px; line-height: 1.7; color: var(--muted); }
+.reader-nutrition .nutrition-missing { color: var(--text); font-size: 14px; }
+.reader-nutrition > button { min-height: 44px; width: 100%; font-size: 11px; margin-top: 16px; }
+.reader-nutrition .nutrition-local { font-size: 10px; }
+.reader-portions { min-inline-size: 0; }
+.reader-portions > legend { padding: 0 6px; font-size: 12px; }
+.reader-portions .portion-shortcuts { margin-top: 0; }
+.reader-portions .serving-shortcuts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.reader-portions .portion-shortcuts button { min-height: 44px; font-size: 12px; }
+.reader-portions .portion-shortcuts button:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
+.recipe-cooking-notes { margin: 16px 0 24px; padding: 14px; border-left: 2px solid var(--accent-primary); background: var(--surface); font-size: 10px; line-height: 1.8; color: var(--muted); }
+.recipe-cooking-notes p + p { margin-top: 8px; }
+.recipe-cooking-notes .cooking-notes-title { font-size: 11px; font-weight: 600; color: var(--text); }
+.card-calories-badge { font-size: 11px; font-weight: 600; padding: 6px 10px; }
+.book-calories-badge { font-size: 10px; font-weight: 600; padding: 4px 7px; }

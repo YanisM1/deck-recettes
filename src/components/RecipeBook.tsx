@@ -22,7 +22,7 @@ function BookPage({ recipe, allRecipes }: { recipe: Recipe; allRecipes: Recipe[]
           {recipe.category === "sale" ? "Du côté salé" : "Pour la douceur"}
         </p>
         <PanBadge recipe={recipe} className="book-pan-badge" />
-        <CaloriesBadge recipe={calorieRecipe} className="book-calories-badge" />
+        <CaloriesBadge recipe={calorieRecipe} showMissing className="book-calories-badge" />
       </div>
       <div className="book-flourish" aria-hidden="true"><span>✳</span></div>
       <div className="book-ingredient-preview">

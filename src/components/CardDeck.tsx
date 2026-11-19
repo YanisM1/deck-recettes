@@ -51,7 +51,7 @@ export function CardDeck({ recipes, onOpen, allRecipes = recipes }: { recipes: R
             <span className="card-shade" />
             <span className="category-badge">{recipe.category === "sale" ? "SALÉ" : "SUCRÉ"}</span>
             <PanBadge recipe={recipe} className="card-pan-badge" />
-            <CaloriesBadge recipe={calorieRecipe} className={`card-calories-badge${recipe.panSize ? " with-pan" : ""}`} />
+            <CaloriesBadge recipe={calorieRecipe} showMissing className={`card-calories-badge${recipe.panSize ? " with-pan" : ""}`} />
             <span className="card-number">{String(itemIndex + 1).padStart(2, "0")}</span>
             <span className="card-copy"><span className="card-overline">FAIT MAISON, TOUT SIMPLEMENT</span>
               <span className="card-title">{recipe.title}</span>

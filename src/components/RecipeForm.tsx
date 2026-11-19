@@ -19,7 +19,8 @@ import {
 import { Modal } from "./Modal";
 import { RecipeImage } from "./RecipeImage";
 import { compressImage } from "../services/imageCompression";
-import { analyzeRecipe } from "../services/geminiService";
+import { analyzeRecipeAi } from "../services/recipeAiService";
+import { hasFreshRecipeAi, type RecipeAiData } from "../services/recipeAiTypes";
 import { hasFreshCalories, recipeFingerprint, type CaloriesInfo } from "../services/calorieAnalysis";
 import { CaloriesBadge } from "./CaloriesBadge";
 import { validateRecipeLinks } from "../services/compositeRecipes";
@@ -136,6 +137,7 @@ export function RecipeForm({
     [servings, setServings] = useState(String(recipe?.servings ?? 2)),
     [linkedRecipeIds, setLinkedRecipeIds] = useState<string[]>(recipe?.linkedRecipeIds ?? []),
     [caloriesInfo, setCaloriesInfo] = useState<CaloriesInfo | undefined>(recipe?.caloriesInfo),
+    [aiScalingData, setAiScalingData] = useState<RecipeAiData | undefined>(recipe?.aiScalingData),
     [analyzing, setAnalyzing] = useState(false),
     [analysisError, setAnalysisError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -147,12 +149,13 @@ export function RecipeForm({
   const baseServings = Number(servings);
   const validServings = Number.isInteger(baseServings) && baseServings >= 1 && baseServings <= 999;
   const analysisInput = {
-    title: title.trim(), category, isCake, panSize: isCake ? panSize : undefined,
+    title: title.trim(), category, isCake: isCake || category === "sucre", panSize: isCake || category === "sucre" ? panSize : undefined,
     ingredients: ingredients.map(line => line.value.trim()).filter(Boolean),
     steps: steps.map(line => line.value.trim()).filter(Boolean), servings: baseServings,
   };
   const fingerprint = recipeFingerprint(analysisInput);
   const freshCalories = hasFreshCalories({ ...analysisInput, caloriesInfo }) ? caloriesInfo : undefined;
+  const freshAiData = hasFreshRecipeAi({ ...analysisInput, aiScalingData }) ? aiScalingData : undefined;
   const canAnalyze = !!analysisInput.title && !!analysisInput.ingredients.length && !!analysisInput.steps.length && validServings;
   const linkChoices = availableRecipes.filter(candidate => candidate.id !== recipe?.id).map(candidate => {
     const selected = linkedRecipeIds.includes(candidate.id);
@@ -176,8 +179,11 @@ export function RecipeForm({
     setAnalyzing(true);
     setAnalysisError("");
     try {
-      const result = await analyzeRecipe(analysisInput, { signal: controller.signal });
-      if (!controller.signal.aborted) setCaloriesInfo(result);
+      const result = await analyzeRecipeAi(analysisInput, { signal: controller.signal });
+      if (!controller.signal.aborted) {
+        setAiScalingData(result);
+        setCaloriesInfo(result.caloriesInfo);
+      }
     } catch (error) {
       if (!controller.signal.aborted) setAnalysisError((error as Error).message || "L’analyse est indisponible pour le moment.");
     } finally {
@@ -238,10 +244,11 @@ export function RecipeForm({
           ingredients: ingredients.map((v) => v.value),
           steps: steps.map((v) => v.value),
           image_url: image,
-          isCake,
-          panSize: isCake ? panSize : undefined,
+          isCake: isCake || category === "sucre",
+          panSize: isCake || category === "sucre" ? panSize : undefined,
           servings: baseServings,
           caloriesInfo: freshCalories,
+          ...(freshAiData ? { aiScalingData: freshAiData } : {}),
           linkedRecipeIds,
         },
         recipe?.id,
@@ -309,17 +316,17 @@ export function RecipeForm({
                 onChange={event => setServings(event.currentTarget.value)} />
             </label>
             <div className="cake-options">
-              <label className="cake-toggle">
+              {category === "sale" && <label className="cake-toggle">
                 <input
                   type="checkbox"
                   checked={isCake}
                   onChange={(e) => setIsCake(e.target.checked)}
                 />
                 <span>🎂 C’est un gâteau / moule</span>
-              </label>
-              {isCake && (
+              </label>}
+              {(isCake || category === "sucre") && (
                 <fieldset className="pan-size-options">
-                  <legend>Taille du moule</legend>
+                  <legend>Taille du moule d’origine</legend>
                   <div>
                     {PAN_SIZES.map((size) => (
                       <button
@@ -444,17 +451,20 @@ export function RecipeForm({
             <div className="calorie-analysis">
               <button type="button" className="secondary-button" disabled={analyzing || busy || !canAnalyze}
                 onClick={() => { void analyze(); }}>
-                {analyzing ? "Analyse des calories…" : "✨ Analyser les calories avec l’IA"}
+                {analyzing ? "Analyse IA en cours…" : "✨ Calculer calories & portions (IA)"}
               </button>
-              {analyzing && <p role="status">Cuisson, mélanges et quantités en cours d’analyse…</p>}
+              {analyzing && <p role="status">Calories et variantes en cours d’analyse. Vous pouvez enregistrer la recette.</p>}
               {analysisError && <p className="notice" role="alert">{analysisError} Vous pouvez enregistrer sans analyse.</p>}
               <CaloriesBadge recipe={{ ...analysisInput, caloriesInfo: freshCalories }} />
+              {freshAiData && <p className="section-caption">{freshAiData.source === "gemini"
+                ? "Variantes IA enregistrées : leur sélection sera instantanée."
+                : "Adaptation locale disponible. Relancez l’IA avec une connexion pour une estimation complète."}</p>}
               {freshCalories && <details className="calorie-assumptions">
                 <summary>À propos de cette estimation</summary>
                 <p>{freshCalories.basis === "part" ? "Gâteau divisé en 8 parts." : "Énergie rapportée à 100 g de préparation cuite."}</p>
                 <ul>{freshCalories.assumptions.map((assumption, index) => <li key={index}>{assumption}</li>)}</ul>
               </details>}
-              <p className="section-caption">Estimation facultative. L’enregistrement reste disponible.</p>
+              <p className="section-caption">La recette est enregistrée immédiatement ; l’analyse peut se terminer en arrière-plan.</p>
               {linkedRecipeIds.length > 0 && <p className="section-caption">Cette analyse concerne la base. Les calories de l’assemblage seront additionnées lorsque chaque préparation aura une estimation à jour.</p>}
             </div>
           </>

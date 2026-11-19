@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Pencil, Trash2, Check, Share, Minus, Plus } from "lucide-react";
-import type { LayoutMode, Recipe } from "../types";
+import { ArrowLeft, Pencil, Trash2, Check, Share } from "lucide-react";
+import { PAN_SIZES, type LayoutMode, type Recipe } from "../types";
 import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
 import { CaloriesBadge } from "./CaloriesBadge";
 import { Modal } from "./Modal";
 import { RecipeShareDialog } from "./RecipeShareDialog";
-import { composeRecipes } from "../services/compositeRecipes";
-import { recipeFingerprint } from "../services/calorieAnalysis";
-import { scaleIngredients } from "../utils/recipePortions";
+import { hasFreshCalories } from "../services/calorieAnalysis";
+import { createRecipeDisplayCache } from "../services/recipeDisplay";
 const NO_RECIPES: Recipe[] = [];
 export function RecipeReader({
   recipe,
@@ -20,6 +19,9 @@ export function RecipeReader({
   layout = "cards",
   themeId,
   availableRecipes = NO_RECIPES,
+  onAnalyze,
+  analyzing = false,
+  analysisStatus = "",
 }: {
   recipe: Recipe;
   onClose: () => void;
@@ -30,35 +32,27 @@ export function RecipeReader({
   layout?: LayoutMode;
   themeId?: string;
   availableRecipes?: Recipe[];
+  onAnalyze?: () => void;
+  analyzing?: boolean;
+  analysisStatus?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null),
     [checked, setChecked] = useState<Set<number>>(new Set()),
     [confirming, setConfirming] = useState(false),
     [showShare, setShowShare] = useState(false),
-    [servingInput, setServingInput] = useState(String(recipe.servings ?? 2)),
+    [selection, setSelection] = useState<number | null>(null),
     [error, setError] = useState("");
-  const baseServings = recipe.servings ?? 2;
-  const requested = Number(servingInput);
-  const validServings = Number.isInteger(requested) && requested >= 1 && requested <= 999;
-  const servings = validServings ? requested : baseServings;
-  const composed = useMemo(() => composeRecipes(recipe, availableRecipes), [recipe, availableRecipes]);
+  const displayCache = useMemo(() => createRecipeDisplayCache(recipe, availableRecipes), [recipe, availableRecipes]);
+  const selected = selection ?? displayCache.initial;
+  const display = displayCache.values[String(selected)] ?? displayCache.values[String(displayCache.initial)];
+  const displayedRecipe = display.recipe;
+  const composed = display.composed;
+  const calories = hasFreshCalories(displayedRecipe) ? displayedRecipe.caloriesInfo : undefined;
+  const sweet = displayCache.kind === "sucre";
   const hasLinks = !!recipe.linkedRecipeIds?.length;
   const canShare = !composed.warnings.some(warning => warning.type !== "duplicate");
-  const ingredientSignature = JSON.stringify(composed.sections.map(section => [section.recipeId, section.ingredients]));
+  const ingredientSignature = displayCache.signature;
   useEffect(() => { setChecked(new Set()); }, [ingredientSignature]);
-  const displayedRecipe = useMemo(() => {
-    const ingredients = scaleIngredients(composed.ingredients, baseServings, servings);
-    const displayed: Recipe = { ...recipe, ingredients, steps: composed.steps, servings, linkedRecipeIds: undefined, caloriesInfo: undefined };
-    const info = composed.caloriesInfo;
-    if (info) {
-      const ratio = servings / baseServings;
-      const totalKcal = info.totalKcal * ratio, cookedWeightGrams = info.cookedWeightGrams * ratio;
-      displayed.caloriesInfo = { ...info, totalKcal, cookedWeightGrams,
-        kcal: Math.round(info.basis === "part" ? totalKcal / 8 : totalKcal / cookedWeightGrams * 100),
-        fingerprint: recipeFingerprint(displayed) };
-    }
-    return displayed;
-  }, [recipe, composed, baseServings, servings]);
   let ingredientOffset = 0, stepOffset = 0;
   const sections = composed.sections.map(section => {
     const result = { ...section, ingredientOffset, stepOffset };
@@ -111,10 +105,20 @@ export function RecipeReader({
         <p className="reader-category">
           {recipe.category === "sale" ? "Le côté salé" : "La touche sucrée"}
           <span>·</span>Fait maison
-          <PanBadge recipe={recipe} className="reader-pan-badge" />
-          <CaloriesBadge recipe={displayedRecipe} className="reader-calories-badge" />
+          <PanBadge recipe={displayedRecipe} className="reader-pan-badge" />
         </p>
         <h1>{recipe.title}</h1>
+        <section className="reader-nutrition" aria-label="Calories et adaptation">
+          <p className="nutrition-eyebrow">Calories estimées</p>
+          {calories ? <>
+            <CaloriesBadge recipe={displayedRecipe} className="reader-calories-badge" />
+            <p>{calories.basis === "part" ? "Par part (coupé en 8 parts égales)." : "Pour 100 g du plat cuisiné final."}</p>
+          </> : <p className="nutrition-missing">Calories à calculer pour cette préparation.</p>}
+          {onAnalyze && <button type="button" className="secondary-button" disabled={analyzing}
+            onClick={onAnalyze}>{analyzing ? "Analyse IA en cours…" : "✨ Calculer calories & portions (IA)"}</button>}
+          {analysisStatus && <p role="status">{analysisStatus}</p>}
+          {display.local && <p className="nutrition-local">Quantités locales indicatives ; les calories des variantes nécessitent une analyse IA.</p>}
+        </section>
         <div className="reader-ornament" aria-hidden="true">
           ✳
         </div>
@@ -125,23 +129,19 @@ export function RecipeReader({
           </span>
         </div>
         <p className="section-caption">Tout ce qu’il vous faut.</p>
-        <div className="reader-portions" aria-label="Ajuster les portions">
-          <label>Personnes
-            <span className="portion-number">
-              <button type="button" aria-label="Moins de personnes" disabled={servings <= 1}
-                onClick={() => setServingInput(String(Math.max(1, servings - 1)))}><Minus size={15} /></button>
-              <input aria-label="Nombre de personnes" type="number" min="1" max="999" step="1" inputMode="numeric"
-                value={servingInput} onChange={event => setServingInput(event.currentTarget.value)}
-                onBlur={() => { if (!validServings) setServingInput(String(baseServings)); }} />
-              <button type="button" aria-label="Plus de personnes" disabled={servings >= 999}
-                onClick={() => setServingInput(String(Math.min(999, servings + 1)))}><Plus size={15} /></button>
-            </span>
-          </label>
-          <div className="portion-shortcuts">{[2, 4, 6, 8].map(value => <button type="button" key={value}
-            aria-label={`${value} personnes`} aria-pressed={servings === value}
-            onClick={() => setServingInput(String(value))}>{value}p</button>)}</div>
-          <p>Base : {baseServings} {baseServings === 1 ? "personne" : "personnes"}. Quantités indicatives ; ajustez les assaisonnements à votre goût.</p>
-        </div>
+        <fieldset className="reader-portions" aria-label={sweet ? "Choisir la taille du moule" : "Choisir le nombre de personnes"}>
+          <legend>{sweet ? "Le moule souhaité" : "À table pour…"}</legend>
+          <div className={`portion-shortcuts ${sweet ? "pan-shortcuts" : "serving-shortcuts"}`}>
+            {(sweet ? PAN_SIZES : [1, 2, 3, 4, 5, 6, 7, 8]).map(value => <button type="button" key={value}
+              aria-label={sweet ? `Moule ${value} cm` : `${value} ${value === 1 ? "personne" : "personnes"}`}
+              aria-pressed={selected === value} onClick={() => setSelection(value)}>{sweet ? `${value} cm` : `${value}p`}</button>)}
+          </div>
+          <p>{sweet ? `Base : moule ${recipe.panSize ?? 26} cm. Chaque gâteau est divisé en 8 parts.` : `Base : ${recipe.servings ?? 2} personnes. Ajustez les assaisonnements à votre goût.`}</p>
+        </fieldset>
+        {display.cookingNotes.length > 0 && <div className="recipe-cooking-notes">
+          <p className="cooking-notes-title">{sweet ? "Proportions et cuisson" : "Conseils d’adaptation"}</p>
+          {display.cookingNotes.map((note, index) => <p key={index}>{note}</p>)}
+        </div>}
         {hasLinks && <div className="composite-notes">
           <p>Chaque préparation est incluse avec toutes ses quantités ; les portions ajustent l’ensemble.</p>
           {composed.warnings.map((warning, index) => <p key={index} role="status">{warning.message}</p>)}
@@ -228,12 +228,12 @@ export function RecipeReader({
       </article>
       {showShare && ref.current && (
         <RecipeShareDialog
-          recipe={hasLinks || servings !== baseServings ? displayedRecipe : recipe}
+          recipe={display.adapted ? displayedRecipe : recipe}
           layout={layout}
           themeElement={ref.current}
           themeId={themeId}
-          synchronized={synchronized && !hasLinks && servings === baseServings}
-          shared={shared && !hasLinks && servings === baseServings}
+          synchronized={synchronized && !display.adapted}
+          shared={shared && !display.adapted}
           onClose={() => setShowShare(false)}
         />
       )}

@@ -1,5 +1,14 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-19 — Calories visibles et variantes instantanées, étape 3/4 : interface
+
+- Étape 2 publiée : 06e0ae5, dpl_8pmd9vmd9yjENfQwpgcPEoBqAxxU, READY ; 230 tests et build sans les deux fichiers secrets.
+- Bloc calorique dédié immédiatement sous le titre : valeur et précision par huitième ou pour 100 g cuits, état manquant explicite et bouton Calculer calories & portions (IA) pour les recettes du carnet. Les cartes et pages anciennes affichent Calories à calculer au lieu de cacher entièrement cette fonction.
+- Sélecteur salé 1..8 et sélecteur de moule 20/26/28 pour le sucré/gâteau. Toutes les variantes d’affichage sont préparées une fois ; un clic lit le cache, sans appel réseau. Le formulaire conserve le moule d’origine et propose l’analyse combinée. Sauvegarder immédiatement sans attendre l’IA reste possible.
+- Assemblages conservés en sections ; chaque composant utilise sa variante seulement si son facteur correspond à celui de l’ensemble. Un facteur sans correspondance utilise le calcul local explicite et retire les calories non justifiables. Liens privés absents des copies partagées, lecteur externe sans action d’analyse privée.
+- Navigateur 393×852 isolé du cloud : ancienne salade ouverte depuis le Livre, bloc et bouton visibles, changement vers 8 personnes possible pendant l’appel. Retour réel Gemini avec cache enregistré puis bascule immédiate à 3 personnes et ~81 kcal/100g. La vérification visuelle complémentaire a été interrompue par la fermeture du transport navigateur ; aucun résultat de ce parcours interrompu n’est revendiqué.
+- 237 tests/36 fichiers et build réussis avant checkpoint ; sélecteurs, valeurs, état local/périmé, nouvelles recettes, partage et sections liés couverts. Validation complète sans secrets, journal, commit/push et déploiement CLI. L’audit final affine les fractions mixtes et pièces entières du repli local.
+
 ## 2026-11-19 — Calories visibles et variantes instantanées, étape 2/4 : cache persistant
 
 - Étape 1 publiée : 930db21, dpl_4CLYmqTar45GGGtqpxR52XVbBmPi, READY ; 215 tests/33 fichiers sans .env.local ni gemini-key.txt. Nouvelle route de production vérifiée par un véritable POST privé : HTTP200, modèle configuré, huit variantes complètes.

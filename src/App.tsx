@@ -27,6 +27,7 @@ export default function App() {
     ? shareRoute.recipe
     : recipes.recipes.find((recipe) => recipe.id === selectedId);
   const canEdit = !shareRoute.route || shareRoute.editable;
+  const selectedAiStatus = selected ? recipeAi.statusFor(selected) : undefined;
   function closeRecipe() {
     setSelectedId(null);
     if (shareRoute.route) shareRoute.close();
@@ -137,6 +138,9 @@ export default function App() {
         <RecipeReader
           key={`reader-${selected.id}`}
           recipe={selected}
+          onAnalyze={canEdit ? () => { void recipeAi.analyze(selected, true); } : undefined}
+          analyzing={selectedAiStatus?.state === "analyzing"}
+          analysisStatus={selectedAiStatus?.message}
           availableRecipes={canEdit ? recipes.recipes : []}
           onClose={closeRecipe}
           onEdit={canEdit ? () => setEditing(selected) : undefined}

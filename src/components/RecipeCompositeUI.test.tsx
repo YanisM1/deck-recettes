@@ -26,7 +26,7 @@ afterEach(() => vi.restoreAllMocks());
 const reader = (base: Recipe, recipes: Recipe[]) => render(<RecipeReader recipe={base} availableRecipes={recipes} synchronized onClose={() => {}} />);
 
 describe("recettes liées dans le lecteur", () => {
-  it("groupe les préparations, numérote les étapes et ajuste tout l’assemblage aux portions", () => {
+  it("groupe les préparations, numérote les étapes et adapte tout l’assemblage au moule", () => {
     const { base, garnish } = fixtures();
     const { container } = reader(base, [base, garnish]);
     expect(screen.getAllByRole("heading", { name: "Base · Gâteau au yaourt" })).toHaveLength(2);
@@ -34,31 +34,32 @@ describe("recettes liées dans le lecteur", () => {
     expect(screen.getByText("~300 kcal / part")).toBeInTheDocument();
     expect([...container.querySelectorAll(".step-number")].map(element => element.textContent)).toEqual(["01", "02", "03"]);
     expect(screen.getByText("Assembler les préparations selon les indications de la recette de base.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "4 personnes" }));
-    expect(screen.getByText("400 g de farine")).toBeInTheDocument();
-    expect(screen.getByText("200 g de chocolat")).toBeInTheDocument();
-    expect(screen.getByText("~600 kcal / part")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Moule 20 cm" }));
+    expect(screen.getByText("118,34 g de farine")).toBeInTheDocument();
+    expect(screen.getByText("59,17 g de chocolat")).toBeInTheDocument();
+    expect(screen.queryByText(/kcal \/ part/)).not.toBeInTheDocument();
     expect(base.ingredients).toEqual(["200 g de farine"]);
     expect(garnish.ingredients).toEqual(["100 g de chocolat"]);
     fireEvent.click(screen.getAllByRole("checkbox")[0]);
-    fireEvent.click(screen.getByRole("button", { name: "Plus de personnes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Moule 28 cm" }));
     expect(screen.getAllByRole("checkbox")[0]).toBeChecked();
-    expect(screen.getByRole("spinbutton", { name: "Nombre de personnes" })).toHaveValue(5);
+    expect(screen.getByRole("button", { name: "Moule 28 cm" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("partage une copie complète aux portions affichées, sans identifiants de liaison ni accès au carnet", () => {
     const { base, garnish } = fixtures();
     reader(base, [base, garnish]);
-    fireEvent.click(screen.getByRole("button", { name: "4 personnes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Moule 20 cm" }));
     fireEvent.click(screen.getByRole("button", { name: "Partager" }));
     const props = share.mock.calls.at(-1)![0] as { recipe: Recipe; synchronized: boolean; shared: boolean };
     expect(props.synchronized).toBe(false);
     expect(props.shared).toBe(false);
     expect(props.recipe.linkedRecipeIds).toBeUndefined();
-    expect(props.recipe.ingredients).toEqual(["400 g de farine", "200 g de chocolat"]);
+    expect(props.recipe.ingredients).toEqual(["118,34 g de farine", "59,17 g de chocolat"]);
     expect(props.recipe.steps).toHaveLength(3);
-    expect(props.recipe.servings).toBe(4);
-    expect(props.recipe.caloriesInfo?.kcal).toBe(600);
+    expect(props.recipe.servings).toBe(2);
+    expect(props.recipe.panSize).toBe(20);
+    expect(props.recipe.caloriesInfo).toBeUndefined();
   });
 
   it("ne présente pas les calories de la base comme celles d’un assemblage incomplet", () => {
@@ -77,19 +78,14 @@ describe("recettes liées dans le lecteur", () => {
     expect(screen.getByRole("button", { name: "Partager" })).toBeEnabled();
   });
 
-  it("borne les portions et remet une valeur vide à la base au blur", () => {
+  it("réserve les trois moules aux gâteaux, même salés", () => {
     const { base, garnish } = fixtures();
     reader(base, [base, garnish]);
-    const portions = screen.getByRole("spinbutton", { name: "Nombre de personnes" });
-    fireEvent.change(portions, { target: { value: "1" } });
-    expect(screen.getByRole("button", { name: "Moins de personnes" })).toBeDisabled();
-    fireEvent.change(portions, { target: { value: "999" } });
-    expect(screen.getByRole("button", { name: "Plus de personnes" })).toBeDisabled();
-    fireEvent.change(portions, { target: { value: "" } });
-    fireEvent.blur(portions);
-    expect(portions).toHaveValue(2);
-  });
-});
+    expect(screen.getByRole("button", { name: "Moule 26 cm" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Moule 20 cm" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Moule 28 cm" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "4 personnes" })).not.toBeInTheDocument();
+  });});
 
 describe("liaisons discrètes dans le formulaire", () => {
   it("préserve la sélection, bloque les cycles et ne propose pas la recette elle-même", () => {
