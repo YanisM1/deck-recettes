@@ -15,7 +15,7 @@
 - Contrôles d’affichage des calories IA et locale, cause explicite de limite Google vs limite par carnet, quantité par 1/8 ou 100 g, plus contrat CSS de cadre fixed `100vw/100dvh`, safe areas minimales 59/34 px et modales de largeur bornée/marge automatique avec hauteur réservée aux safe areas.
 - L’essai de revue visuelle navigateur sur 393×852 n’a pas pu démarrer : `cua.getState()` signale « Local browser access is unavailable for this chat » ; Chrome est absent de l’inventaire du helper. Une tentative de lancement n’a retourné aucun état de fenêtre. Aucune capture ni observation visuelle n’est revendiquée. Le contrat CSS et les parcours jsdom sont couverts par tests.
 - Vérification production calories réalisée à l’étape 1 : gâteau Gemini 280 kcal/part sauvegardé/relu ; plat salé repli local 152 kcal/100 g sauvegardé/relu après HTTP504 Google. QA supprimée par identifiant dédié ; les recettes utilisateur n’ont pas été modifiées.
-- En attente du checkpoint final automatisé : suite complète `npm test`, `npm run build` sans `.env.local` ni `gemini-key.txt`, analyse de bundle, commit/push et déploiement Vercel.
+- Checkpoint final : `npm test` 298 tests/45 fichiers réussis ; `npm run build` réussi sans `.env.local` ni `gemini-key.txt` ; analyse du bundle sans clé ; commit `9e89f89` poussé sur main ; déploiement `dpl_5v2VifmXmDAiLS3FzJLJ3bvWjvsP` READY sur `https://deck-recettes.vercel.app`. À la création du journal, aucun état Git ne signale d’autre modification suivie.
 
 ## 2026-11-19 — Calories et création par fusion, étape 1/3 : diagnostic et réparation
 
