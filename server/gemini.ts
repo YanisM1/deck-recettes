@@ -8,13 +8,14 @@ const MAX_BODY_BYTES = 32_000;
 const WINDOW_MS = 10 * 60_000;
 const requests = new Map<string, { start: number; count: number }>();
 type Options = { env?: NodeJS.ProcessEnv; fetcher?: typeof fetch; keyReader?: () => Promise<string>; now?: () => number; allowLocal?: boolean };
-class AnalysisError extends Error {
+export class AnalysisError extends Error {
   constructor(public status: number, public code: string) { super(code); }
 }
-const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "private, no-store", Vary: "x-deckchef-key, Origin", "X-Content-Type-Options": "nosniff" } });
+export const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "private, no-store", Vary: "x-deckchef-key, Origin", "X-Content-Type-Options": "nosniff" } });
 export async function loadGeminiKey(env: NodeJS.ProcessEnv = process.env): Promise<string> {
   const key = env.GEMINI_API_KEY?.trim() || env.VITE_GEMINI_API_KEY?.trim();
   if (key) return key;
+  if (env.VERCEL) return "";
   try { return (await readFile(resolve(process.cwd(), "gemini-key.txt"), "utf8")).trim(); } catch { return ""; }
 }
 export function buildAnalysisPrompt(recipe: AnalysisInput): string {
@@ -37,7 +38,7 @@ const outputSchema = {
     assumptions: { type: "array", maxItems: 12, items: { type: "string", maxLength: 500 } },
   }, required: ["type", "totalKcal", "cookedWeightGrams", "assumptions"],
 };
-async function boundedBody(request: Request): Promise<unknown> {
+export async function boundedBody(request: Request): Promise<unknown> {
   if (Number(request.headers.get("content-length")) > MAX_BODY_BYTES) throw new AnalysisError(413, "INVALID_RECIPE");
   const reader = request.body?.getReader();
   if (!reader) throw new AnalysisError(400, "INVALID_RECIPE");
@@ -57,7 +58,7 @@ async function boundedBody(request: Request): Promise<unknown> {
     throw new AnalysisError(400, "INVALID_RECIPE");
   }
 }
-function useRateLimit(key: string, now: number) {
+export function useRateLimit(key: string, now: number) {
   const id = createHash("sha256").update(key).digest("hex"), bucket = requests.get(id);
   if (!bucket || now - bucket.start >= WINDOW_MS) {
     if (requests.size >= 1000) requests.delete(requests.keys().next().value!);
@@ -66,7 +67,7 @@ function useRateLimit(key: string, now: number) {
   if (bucket.count >= 10) throw new AnalysisError(429, "RATE_LIMITED");
   bucket.count++;
 }
-async function authorize(request: Request, env: NodeJS.ProcessEnv, fetcher: typeof fetch, allowLocal: boolean) {
+export async function authorize(request: Request, env: NodeJS.ProcessEnv, fetcher: typeof fetch, allowLocal: boolean) {
   const key = request.headers.get("x-deckchef-key") || "";
   if (!/^[a-f0-9]{64}$/.test(key)) throw new AnalysisError(401, "UNAUTHORIZED");
   const url = env.VITE_SUPABASE_URL, apiKey = env.VITE_SUPABASE_ANON_KEY;

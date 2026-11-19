@@ -21,10 +21,17 @@ describe("validité des estimations", () => {
     expect(() => normalizeAnalysisInput({ ...recipe, servings: -1 })).toThrow();
     expect(() => normalizeAnalysisInput({ ...recipe, steps: ["x".repeat(2001)] })).toThrow();
   });
-  it("ignore le moule si le gâteau est désactivé et les propriétés étrangères à l’analyse", () => {
-    expect(recipeFingerprint({ ...recipe, isCake: false, panSize: 26 })).toBe(recipeFingerprint({ ...recipe, isCake: false, panSize: undefined }));
-    expect(normalizeAnalysisInput({ ...recipe, isCake: false }).panSize).toBeUndefined();
+  it("ignore le moule pour un plat salé ordinaire et les propriétés étrangères à l’analyse", () => {
+    const savory = { ...recipe, category: "sale" as const, isCake: false };
+    expect(recipeFingerprint({ ...savory, panSize: 26 })).toBe(recipeFingerprint({ ...savory, panSize: undefined }));
+    expect(normalizeAnalysisInput(savory).panSize).toBeUndefined();
     expect(recipeFingerprint({ ...recipe, image_url: "secret", linkedRecipeIds: ["ignored"] } as AnalysisInput)).toBe(info.fingerprint);
+  });
+  it("canonicalise les recettes sucrées anciennes avec un moule par défaut stable", () => {
+    const legacy = { ...recipe, isCake: false, panSize: undefined };
+    expect(normalizeAnalysisInput(legacy)).toMatchObject({ isCake: true, panSize: 26 });
+    expect(recipeFingerprint(legacy)).toBe(recipeFingerprint(normalizeAnalysisInput(legacy)));
+    expect(recipeFingerprint({ ...legacy, panSize: 20 })).not.toBe(recipeFingerprint(legacy));
   });
   it("refuse les incohérences arithmétiques et les réponses non estimatives", () => {
     expect(isCaloriesInfo(info)).toBe(true);

@@ -35,15 +35,15 @@ export function normalizeAnalysisInput(value: unknown): AnalysisInput {
   if (value.isCake != null && typeof value.isCake !== "boolean") throw new Error("Le type de recette est invalide.");
   if (value.panSize != null && (typeof value.panSize !== "number" || ![20, 26, 28].includes(value.panSize))) throw new Error("La taille du moule est invalide.");
   if (value.servings != null && (typeof value.servings !== "number" || !Number.isSafeInteger(value.servings) || value.servings < 1 || value.servings > 1000)) throw new Error("Le nombre de portions est invalide.");
-  const isCake = value.isCake === true || (value.isCake == null && value.panSize != null);
-  return { title: value.title.trim(), category: value.category as AnalysisInput["category"], ingredients: lines(value.ingredients, 500), steps: lines(value.steps, 2000), isCake, panSize: !isCake || value.panSize == null ? undefined : value.panSize as AnalysisInput["panSize"], servings: (value.servings as number | undefined) ?? 2 };
+  const isCake = value.category === "sucre" || value.isCake === true || (value.isCake == null && value.panSize != null);
+  return { title: value.title.trim(), category: value.category as AnalysisInput["category"], ingredients: lines(value.ingredients, 500), steps: lines(value.steps, 2000), isCake, panSize: isCake ? (value.panSize ?? 26) as AnalysisInput["panSize"] : undefined, servings: (value.servings as number | undefined) ?? 2 };
 }
 
 // A cache/content identifier, never an authentication token. Image, timestamps,
 // and links deliberately do not invalidate a recipe's own ingredient analysis.
 export function recipeFingerprint(input: AnalysisInput): string {
-  const isCake = input.isCake ?? input.panSize != null;
-  const content = JSON.stringify([input.title.trim(), input.category, input.ingredients.map(line => line.trim()).filter(Boolean), input.steps.map(line => line.trim()).filter(Boolean), isCake, isCake ? input.panSize ?? null : null, input.servings ?? 2]);
+  const isCake = input.category === "sucre" || input.isCake === true || (input.isCake == null && input.panSize != null);
+  const content = JSON.stringify([input.title.trim(), input.category, input.ingredients.map(line => line.trim()).filter(Boolean), input.steps.map(line => line.trim()).filter(Boolean), isCake, isCake ? input.panSize ?? 26 : null, input.servings ?? 2]);
   let hash = 14695981039346656037n;
   for (const byte of new TextEncoder().encode(content)) hash = BigInt.asUintN(64, (hash ^ BigInt(byte)) * 1099511628211n);
   return `v1-${hash.toString(16).padStart(16, "0")}`;

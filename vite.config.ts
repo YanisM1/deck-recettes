@@ -1,6 +1,7 @@
 import { defineConfig } from "vitest/config";
 import { loadEnv, type Plugin } from "vite";
 import { handleAnalyzeRecipe } from "./server/gemini.js";
+import { handleRecipeAi } from "./server/recipeAi.js";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 function localAnalysis(mode: string): Plugin {
@@ -8,7 +9,7 @@ function localAnalysis(mode: string): Plugin {
     name: "deckchef-local-analysis",
     configureServer(server) {
       const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
-      server.middlewares.use("/api/analyze-recipe", async (req, res) => {
+      for (const [path, handler] of [["/api/analyze-recipe", handleAnalyzeRecipe], ["/api/recipe-ai", handleRecipeAi]] as const) server.middlewares.use(path, async (req, res) => {
         try {
           const chunks: Buffer[] = []; let bytes = 0;
           for await (const chunk of req) {
@@ -18,12 +19,12 @@ function localAnalysis(mode: string): Plugin {
           }
           const controller = new AbortController();
           req.on("aborted", () => controller.abort());
-          const request = new Request(`http://${req.headers.host}/api/analyze-recipe`, {
+          const request = new Request(`http://${req.headers.host}${path}`, {
             method: req.method, headers: req.headers as Record<string, string>,
             body: req.method === "POST" ? Buffer.concat(chunks) : undefined,
             signal: controller.signal,
           });
-          const response = await handleAnalyzeRecipe(request, { env, allowLocal: true });
+          const response = await handler(request, { env, allowLocal: true });
           res.statusCode = response.status;
           response.headers.forEach((value, key) => res.setHeader(key, value));
           res.end(Buffer.from(await response.arrayBuffer()));

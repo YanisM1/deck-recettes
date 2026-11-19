@@ -1,5 +1,15 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-19 — Calories visibles et variantes instantanées, étape 1/4 : pont IA
+
+- AGENTS et journal relus, npm run sync : main à jour et dépendances installées, audit npm sans vulnérabilité. Audit : l’analyse existait dans la troisième partie du formulaire, mais aucune action dans les fiches anciennes ; portions encore linéaires et absence de variantes persistées.
+- Nouvelle route /api/recipe-ai : un appel Gemini structuré pour la base et les huit variantes salées ou les trois moules 20/26/28. Conservation de l’ancienne route. Contrôles d’origine, carnet privé/RLS, volume, délai et fréquence réutilisés ; secret uniquement serveur, fichier de secours limité au développement.
+- Données versionnées et liées au contenu, ingrédients conservés dans leur ordre ; valeurs calorifiques dérivées de l’énergie et de la masse cuite. Toute recette sucrée utilise désormais une base de moule et huit parts. Validation des sorties, pièces indivisibles et réponses périmées ; le client possède un repli local déterministe sans inventer les calories inconnues.
+- GEMINI_API_KEY déjà présent en production. Clé locale validée auprès de Google (HTTP200, modèle gemini-3.5-flash-lite disponible), ajoutée dans .env.local ignoré et dans un secret Vercel Preview. Un premier refus automatique de Preview a été réexaminé avec l’autorisation explicite « production / preview » de la demande puis accepté. Aucun secret affiché ou committé.
+- Checkpoint étendu avec -WithoutSecrets : tests puis build sans .env.local ni gemini-key.txt, restauration des deux fichiers même en cas d’échec, contrôle du bundle avant publication. Persistance des variantes et nouvelle interface restent prévues aux étapes 2 et 3.
+- Appels réels du nouveau service validés : plat salé HTTP200, huit variantes 1..8 et ~172 kcal/100g ; gâteau HTTP200, variantes 20/26/28 et base ~279 kcal par huitième. Traces synthétiques sans secret dans .tools/recipe-ai-live-*.json.
+- Validation complète, commit/push main et déploiement production CLI de cette étape. Aucun changement de données ou de règles Supabase à cette étape.
+
 ## 2026-11-19 — Gemini et assemblages, étape 3/3 : interface et validation finale
 
 - Étape 2 publiée : a23d409, dpl_A6yc1SVLyxdW1VSCzF3awgkXos9U, READY. L’API Gemini de production fonctionne après correction ESM : appel réel HTTP 200, modèle gemini-3.5-flash-lite, sans divulgation de clé.
