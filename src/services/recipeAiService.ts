@@ -30,6 +30,8 @@ export async function analyzeRecipeAi(input: AnalysisInput & { caloriesInfo?: Ca
         RATE_LIMITED: "La limite temporaire de calcul a été atteinte.",
         TIMEOUT: "Le calcul a dépassé son délai de réponse.",
       };
+      const providerStatus = /^PROVIDER_ERROR_(\d{3})$/.exec(code)?.[1];
+      if (providerStatus) messages[code] = "Google Gemini a répondu avec l’erreur HTTP " + providerStatus + ".";
       reason = messages[code] ?? (response.status >= 500
         ? "Le service Gemini est temporairement indisponible."
         : `Le service de calcul a répondu avec l’erreur HTTP ${response.status}.`);

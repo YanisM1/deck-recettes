@@ -79,7 +79,8 @@ export async function handleRecipeAi(request: Request, options: Options = {}): P
       let providerMessage = "";
       try { providerMessage = String((await upstream.clone().json())?.error?.message ?? ""); } catch { /* Examine le statut même si l’API renvoie un corps vide. */ }
       const missingModel = upstream.status === 404 || (upstream.status === 400 && /model|not found|not supported/i.test(providerMessage));
-      if (!missingModel || candidateModel === models.at(-1)) {
+      const retryableProvider = missingModel || upstream.status >= 500;
+      if (!retryableProvider || candidateModel === models.at(-1)) {
         if (upstream.status === 429) throw new AnalysisError(429, "RATE_LIMITED");
         if (upstream.status === 401 || upstream.status === 403) {
           console.error("recipe-ai Gemini authorization failed", { status: upstream.status, model: candidateModel });
@@ -89,7 +90,7 @@ export async function handleRecipeAi(request: Request, options: Options = {}): P
           console.error("recipe-ai Gemini model unavailable", { status: upstream.status, model: candidateModel });
           throw new AnalysisError(502, "MODEL_UNAVAILABLE");
         }
-        const code = upstream.status === 400 ? "INVALID_REQUEST" : upstream.status >= 500 ? "PROVIDER_ERROR" : "UNAVAILABLE";
+        const code = upstream.status === 400 ? "INVALID_REQUEST" : upstream.status >= 500 ? "PROVIDER_ERROR_" + upstream.status : "UNAVAILABLE";
         console.error("recipe-ai Gemini request failed", { status: upstream.status, model: candidateModel, code });
         throw new AnalysisError(502, code);
       }

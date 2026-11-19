@@ -34,6 +34,24 @@ describe("API calories et variantes en un appel", () => {
       expect.stringContaining("/models/gemini-2.5-flash:generateContent"),
     ]);
   });
+  it("réessaie avec le modèle de secours si Gemini répond 503", async () => {
+    const network = vi.fn()
+      .mockResolvedValueOnce(Response.json({ error: { message: "temporarily unavailable" } }, { status: 503 }))
+      .mockResolvedValueOnce(wrap(response()));
+    const result = await handleRecipeAi(request(), options(network));
+    expect(result.status).toBe(200);
+    expect((await result.json()).model).toBe("gemini-2.5-flash");
+    expect(network).toHaveBeenCalledTimes(2);
+  });
+  it("expose seulement le statut final du fournisseur quand tous les modèles sont en panne", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const network = vi.fn().mockResolvedValue(Response.json({ error: { message: "down" } }, { status: 503 }));
+    const result = await handleRecipeAi(request(), options(network));
+    expect(result.status).toBe(502);
+    expect(await result.json()).toEqual({ code: "PROVIDER_ERROR_503" });
+    expect(JSON.stringify(log.mock.calls)).not.toContain("down");
+    expect(network).toHaveBeenCalledTimes(3);
+  });
   it("retourne un code explicite et ne journalise ni la clé ni le corps fournisseur", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const secret = "test-private-server-key";

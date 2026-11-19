@@ -20,6 +20,7 @@ it("fonctionne hors ligne et expose la cause sans divulguer le corps d’erreur"
     { run: () => Promise.reject(new TypeError("offline")), message: /hors ligne/ },
     { run: () => Promise.resolve(Response.json({ secret: "must-not-reach-ui" }, { status: 502 })), message: /indisponible/ },
     { run: () => Promise.resolve(Response.json({ code: "INVALID_REQUEST" }, { status: 502 })), message: /configuration de la requête structurée/ },
+    { run: () => Promise.resolve(Response.json({ code: "PROVIDER_ERROR_503" }, { status: 502 })), message: /erreur HTTP 503/ },
     { run: () => Promise.resolve(new Response("invalid-json")), message: /illisible/ },
     { run: () => Promise.resolve(Response.json({ code: "RATE_LIMITED" }, { status: 429 })), message: /limite temporaire/ },
   ];
