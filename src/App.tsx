@@ -11,11 +11,14 @@ import { RecipeForm } from "./components/RecipeForm";
 import { Modal } from "./components/Modal";
 import { useRecipeShareRoute } from "./hooks/useRecipeShareRoute";
 import { filterRecipes, type Filters, type Recipe } from "./types";
+import { useRecipeAiActions } from "./hooks/useRecipeAiActions";
+import { hasFreshRecipeAi } from "./services/recipeAiTypes";
 export default function App() {
   const preferences = usePreferences(),
     theme = themes.find((t) => t.id === preferences.theme)!,
     [settings, setSettings] = useState(false);
   const recipes = useRecipes();
+  const recipeAi = useRecipeAiActions();
   const [filters, setFilters] = useState<Filters>({ sale: true, sucre: true }),
     [selectedId, setSelectedId] = useState<string | null>(null),
     [editing, setEditing] = useState<Recipe | "new" | null>(null);
@@ -168,6 +171,7 @@ export default function App() {
             const saved = getRecipeStore().save(input, id);
             setEditing(null);
             setSelectedId(saved.id);
+            if (!hasFreshRecipeAi(saved)) void recipeAi.analyze(saved);
           }}
         />
       )}

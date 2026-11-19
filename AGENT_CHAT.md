@@ -1,5 +1,14 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-19 — Calories visibles et variantes instantanées, étape 2/4 : cache persistant
+
+- Étape 1 publiée : 930db21, dpl_4CLYmqTar45GGGtqpxR52XVbBmPi, READY ; 215 tests/33 fichiers sans .env.local ni gemini-key.txt. Nouvelle route de production vérifiée par un véritable POST privé : HTTP200, modèle configuré, huit variantes complètes.
+- Ajout de caloriesValue/caloriesUnit/caloriesNote/aiScalingData au modèle et des quatre colonnes SQL correspondantes. Métadonnées dérivées des analyses fraîches, normalisées à la lecture du cache et de la base. Ancien schéma compatible : les champs historiques restent utilisables et les nouveaux restent en attente sans perte.
+- Enregistrement local immédiat puis enrichissement asynchrone dans App. Déduplication par carnet/recette/contenu, annulation de l’ancien travail lors d’une nouvelle version, refus des réponses après suppression/modification/changement de carnet. Une indisponibilité IA conserve les variantes Gemini déjà connues ; erreur de quota explicite sans perdre la recette originale.
+- Migration créée avec la CLI puis appliquée de façon ciblée via Supabase CLI 3.2 db query --remote=miltqwovqupvnaibjdgc --file : quatre colonnes nullables, contraintes bornées et adaptation de deckchef_initialize en SECURITY INVOKER. Un refus automatique initial a été réexaminé avec les quatre ajouts explicitement autorisés par la nouvelle demande, puis accepté. Aucun push global de l’historique partagé, aucune donnée existante ou règle RLS modifiée.
+- Contrôle réel dans deux carnets QA neufs avec le même UUID : initialisation, sauvegarde/relecture du cache des huit variantes et des scalaires, contraintes, lecture croisée/sans en-tête à zéro. Deux recettes QA nettoyées ; seuls les marqueurs de carnets vides restent. Résultats .tools/ai-persistence-v3/live-result.json.
+- Audit Supabase : aucun nouvel avertissement ; avis préexistants des schémas privés Kal et lecture partagée HMAC inchangés. Tests de persistance et de courses asynchrones ajoutés, validation complète sans les deux fichiers secrets, commit/push et déploiement CLI de cette étape.
+
 ## 2026-11-19 — Calories visibles et variantes instantanées, étape 1/4 : pont IA
 
 - AGENTS et journal relus, npm run sync : main à jour et dépendances installées, audit npm sans vulnérabilité. Audit : l’analyse existait dans la troisième partie du formulaire, mais aucune action dans les fiches anciennes ; portions encore linéaires et absence de variantes persistées.

@@ -1,4 +1,5 @@
 import type { CaloriesInfo } from "./services/calorieAnalysis";
+import type { RecipeAiData } from "./services/recipeAiTypes";
 export type Category = "sale" | "sucre";
 export type LayoutMode = "cards" | "book";
 export type PanSize = 20 | 26 | 28;
@@ -27,6 +28,10 @@ export interface Recipe {
   panSize?: PanSize;
   servings?: number;
   caloriesInfo?: CaloriesInfo;
+  caloriesValue?: number;
+  caloriesUnit?: "kcal / part (1/8)" | "kcal / 100g";
+  caloriesNote?: string;
+  aiScalingData?: RecipeAiData;
   linkedRecipeIds?: string[];
 }
 export type RecipeInput = Pick<
@@ -40,6 +45,10 @@ export type RecipeInput = Pick<
   | "panSize"
   | "servings"
   | "caloriesInfo"
+  | "caloriesValue"
+  | "caloriesUnit"
+  | "caloriesNote"
+  | "aiScalingData"
   | "linkedRecipeIds"
 >;
 export type Filters = Record<Category, boolean>;
