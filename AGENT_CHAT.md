@@ -7,7 +7,7 @@
 - Les ingrédients et étapes sont copiés avec des séparateurs par source ; une étape d’assemblage finale est ajoutée et reste modifiable. Catégorie, gâteau/moule et portions viennent de la recette principale. Les métadonnées IA/calories et les liens privés des sources ne sont pas copiés.
 - À l’enregistrement, le nouveau brouillon passe par le stockage ordinaire avec linkedRecipeIds vide. L’App le sauvegarde avant de lancer l’analyse globale existante. Les recettes source restent lues uniquement.
 - L’ancien sélecteur de liens a été retiré de la création/édition courante. Les liens des recettes historiques sont conservés lors de l’édition si leurs sources existent encore ; la création par fusion ne crée pas de liaison en arrière-plan.
-- Outil pur de fusion testé pour les sections, l’assemblage, le choix de catégorie/moule/portions, l’indépendance et l’absence de mutation des sources. Parcours de sélection/formulaire testé, dont seuil de deux et nouvelle entrée indépendante. Tests ciblés : 16/16 réussis ; checkpoint complet de l’étape en cours.
+- Outil pur de fusion testé pour les sections, l’assemblage, le choix de catégorie/moule/portions, l’indépendance et l’absence de mutation des sources. Parcours de sélection/formulaire testé, dont seuil de deux et nouvelle entrée indépendante. Checkpoint de l’étape : 294 tests/43 fichiers réussis, build secretless, commit 063c61f poussé sur main et déploiement dpl_Dc7FVLS4F1SgHEonPueYnYgvnyqu READY. La revue visuelle à 393×852 et le test de l’analyse après enregistrement sont au dernier jalon.
 
 ## 2026-11-19 — Calories et création par fusion, étape 1/3 : diagnostic et réparation
 
