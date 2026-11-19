@@ -5,12 +5,14 @@ import { recipeFingerprint, type AnalysisInput, type CaloriesInfo } from "./calo
 const dish: AnalysisInput = { title: "Steaks et oignons", category: "sale", ingredients: ["2 steaks", "1 oignon", "10 g de sel", "20 ml d’huile"], steps: ["Cuire à la poêle."], servings: 2 };
 const cake: AnalysisInput = { title: "Gâteau", category: "sucre", ingredients: ["200 g de farine", "2 œufs", "100 g de sucre", "4 g de levure"], steps: ["Cuire 30 minutes à 180 °C."], isCake: true, panSize: 20 };
 describe("adaptations locales pré-calculées", () => {
-  it("génère toutes les variantes sans réseau, ni calories inventées", () => {
+  it("génère une estimation locale affichée pour les ingrédients reconnus", () => {
     const result = createLocalRecipeAi(dish);
     expect(isRecipeAiData(result, dish)).toBe(true);
     expect(Object.keys(result.servingsMap!)).toEqual(["1", "2", "3", "4", "5", "6", "7", "8"]);
-    expect(result.caloriesInfo).toBeUndefined();
+    expect(result.caloriesInfo).toMatchObject({ model: "local-nutrition-v1", type: "plat_sale", basis: "100g", kcal: expect.any(Number) });
+    expect(result.servingsMap!["2"].caloriesInfo?.kcal).toBe(result.caloriesInfo!.kcal);
     expect(result.source).toBe("local");
+    expect(result.note).toContain("Estimation locale indicative");
     expect(createLocalRecipeAi(dish)).toEqual(result);
   });
   it("arrondit les pièces entières et modère les assaisonnements", () => {
@@ -28,13 +30,14 @@ describe("adaptations locales pré-calculées", () => {
     expect(result.panSizesMap!["28"].ingredients).toEqual(["400 g de farine", "4 œufs", "200 g de sucre", "8 g de levure"]);
     expect(result.panSizesMap!["26"].cookingNote).toContain("Vérifiez");
   });
-  it("préserve seulement une estimation fraîche de la variante d’origine", () => {
+  it("préserve le résultat Gemini de base et recalcule un cache devenu périmé", () => {
     const known: CaloriesInfo = { type: "gateau", basis: "part", parts: 8, totalKcal: 1600, cookedWeightGrams: 600, kcal: 200, estimated: true, assumptions: [], analyzedAt: "2026-11-19T10:00:00Z", model: "gemini-3.5-flash-lite", fingerprint: recipeFingerprint(cake) };
     const result = createLocalRecipeAi({ ...cake, caloriesInfo: known });
     expect(result.caloriesInfo).toEqual(known);
     expect(result.panSizesMap!["20"].caloriesInfo?.fingerprint).toBe(recipeFingerprint(recipeAiVariantInput(cake, result.panSizesMap!["20"], 20)));
     expect(result.panSizesMap!["26"].caloriesInfo).toBeUndefined();
-    expect(createLocalRecipeAi({ ...cake, steps: ["Frire."], caloriesInfo: known }).caloriesInfo).toBeUndefined();
+    const stale = createLocalRecipeAi({ ...cake, steps: ["Frire."], caloriesInfo: known });
+    expect(stale.caloriesInfo?.model).toBe("local-nutrition-v1");
   });
   it("refuse une table partielle, un contenu périmé et les fractions de pièces", () => {
     const result = createLocalRecipeAi(dish);

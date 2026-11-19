@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildRecipeAiPrompt, handleRecipeAi } from "./recipeAi";
+import { buildRecipeAiPrompt, handleRecipeAi, parseGeminiJson } from "./recipeAi";
 import { hasFreshCalories, normalizeAnalysisInput, type AnalysisInput } from "../src/services/calorieAnalysis";
 import { isRecipeAiData, recipeAiVariantInput } from "../src/services/recipeAiTypes";
 const cake: AnalysisInput = { title: "Gâteau au yaourt", category: "sucre", isCake: false, panSize: 20, ingredients: ["200 g de farine", "2 œufs"], steps: ["Mélanger puis cuire 35 minutes à 180 °C."] };
@@ -16,6 +16,24 @@ function response(input: AnalysisInput = cake) {
 const wrap = (value: unknown) => Response.json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: JSON.stringify(value) }] } }] });
 const options = (fetcher: typeof fetch) => ({ env: {}, allowLocal: true, keyReader: async () => "test-private-server-key", fetcher });
 describe("API calories et variantes en un appel", () => {
+  it("nettoie les blocs Markdown et tolère un préambule sans exposer le brut", () => {
+    const fence = String.fromCharCode(96).repeat(3);
+    expect(parseGeminiJson(fence + "json\n{\"base\":1}\n" + fence)).toEqual({ base: 1 });
+    expect(parseGeminiJson("Réponse structurée:\n{\"base\":1}")).toEqual({ base: 1 });
+    expect(() => parseGeminiJson(fence + "json\ncassé\n" + fence)).toThrow();
+  });
+  it("bascule sur un modèle actif si le modèle configuré répond 404", async () => {
+    const network = vi.fn()
+      .mockResolvedValueOnce(Response.json({ error: { message: "model not found" } }, { status: 404 }))
+      .mockResolvedValueOnce(wrap(response()));
+    const result = await handleRecipeAi(request(), { ...options(network), env: { GEMINI_MODEL: "gemini-old-model" } });
+    expect(result.status).toBe(200);
+    expect((await result.json()).model).toBe("gemini-2.5-flash");
+    expect(network.mock.calls.map(call => call[0])).toEqual([
+      expect.stringContaining("/models/gemini-old-model:generateContent"),
+      expect.stringContaining("/models/gemini-2.5-flash:generateContent"),
+    ]);
+  });
   it("renvoie les trois moules et kcal par huitième pour toute recette sucrée", async () => {
     const network = vi.fn().mockResolvedValue(wrap(response()));
     const result = await handleRecipeAi(request(), options(network));

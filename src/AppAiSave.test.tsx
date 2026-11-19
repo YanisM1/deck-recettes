@@ -29,7 +29,7 @@ it("sauvegarde avant la réponse IA et enrichit le carnet après le retour à la
   expect(saved).toBeDefined();
   expect(saved.aiScalingData).toBeUndefined();
   expect(screen.getByRole("dialog", { name: saved.title })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Analyse IA en cours…" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "⏳ Calcul des calories…" })).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "4 personnes" }));
   expect(screen.getByText("4 steaks")).toBeInTheDocument();
   expect(analyzeRecipeAi).toHaveBeenCalledOnce();

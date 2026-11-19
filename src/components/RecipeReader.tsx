@@ -119,12 +119,13 @@ export function RecipeReader({
           <p className="nutrition-eyebrow">Calories estimées</p>
           {calories ? <>
             <CaloriesBadge recipe={displayedRecipe} className="reader-calories-badge" />
-            <p>{calories.basis === "part" ? "Par part (coupé en 8 parts égales)." : "Pour 100 g du plat cuisiné final."}</p>
+            <p>{calories.basis === "part" ? "Par part (gâteau coupé en 8 parts égales)." : "Pour 100 g du plat cuisiné final."}</p>
+            <p className="nutrition-origin-note">{calories.model.startsWith("local-") ? "Estimation locale indicative, basée sur des valeurs moyennes des ingrédients reconnus." : "Calcul IA estimatif."}</p>
           </> : <p className="nutrition-missing">Calories à calculer pour cette préparation.</p>}
           {onAnalyze && <button type="button" className="secondary-button" disabled={analyzing}
-            onClick={onAnalyze}>{analyzing ? "Analyse IA en cours…" : "✨ Calculer calories & portions (IA)"}</button>}
+            onClick={onAnalyze}>{analyzing ? "⏳ Calcul des calories…" : "✨ Recalculer les calories"}</button>}
           {analysisStatus && <p role="status">{analysisStatus}</p>}
-          {display.local && <p className="nutrition-local">Quantités locales indicatives ; les calories des variantes nécessitent une analyse IA.</p>}
+          {display.local && <p className="nutrition-local">Adaptation et estimation locale indicatives. Les valeurs sont basées sur les ingrédients reconnus.</p>}
         </section>
         <div className="reader-ornament" aria-hidden="true">
           ✳

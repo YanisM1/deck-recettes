@@ -676,6 +676,7 @@
   text-transform: none;
   white-space: nowrap;
 }
+.calories-origin { font-size: .8em; font-weight: 400; opacity: .78; }
 .card-calories-badge {
   position: absolute;
   top: 59px;
@@ -732,6 +733,7 @@
 .reader-nutrition .reader-calories-badge svg { width: 20px; height: 20px; color: var(--accent-primary); }
 .reader-nutrition > p:not(.nutrition-eyebrow) { margin-top: 8px; font-size: 11px; line-height: 1.7; color: var(--muted); }
 .reader-nutrition .nutrition-missing { color: var(--text); font-size: 14px; }
+.reader-nutrition .nutrition-origin-note { font-size: 10px; }
 .reader-nutrition > button { min-height: 44px; width: 100%; font-size: 11px; margin-top: 16px; }
 .reader-nutrition .nutrition-local { font-size: 10px; }
 .reader-portions { min-inline-size: 0; }

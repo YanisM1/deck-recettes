@@ -12,8 +12,9 @@ export function CaloriesBadge({ recipe, className = "", showMissing = false }: {
   </span> : null;
   const info = recipe.caloriesInfo!;
   const value = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(info.kcal);
-  const label = info.basis === "part" ? `~${value} kcal / part` : `~${value} kcal / 100 g`;
-  return <span className={`calories-badge ${className}`} title={info.basis === "part" ? "Estimation pour 1 part sur 8" : "Estimation pour 100 g du plat cuit"}>
-    <Flame size={12} aria-hidden="true" />{label}
+  const label = info.basis === "part" ? `~${value} kcal / part (1/8)` : `~${value} kcal / 100 g`;
+  const source = info.model.startsWith("local-") ? "Estimation locale" : "Calcul IA";
+  return <span className={`calories-badge ${className}`} title={`${source} · ${info.basis === "part" ? "Estimation pour 1 part sur 8" : "Estimation pour 100 g du plat cuit"}`}>
+    <Flame size={12} aria-hidden="true" /><span>{label}</span><small className="calories-origin">{source}</small>
   </span>;
 }

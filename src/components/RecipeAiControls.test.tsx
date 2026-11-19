@@ -67,10 +67,10 @@ describe("sélections pré-calculées dans le lecteur", () => {
       fireEvent.click(screen.getByRole("button", { name: `Moule ${target} cm` }));
       expect(screen.getByText(`${target * 10} g de farine`)).toBeInTheDocument();
       expect(screen.getByText(target === 20 ? "1 œuf" : "2 œufs")).toBeInTheDocument();
-      expect(screen.getByText(`~${target * 10} kcal / part`)).toBeInTheDocument();
+      expect(screen.getByText("~" + target * 10 + " kcal / part (1/8)")).toBeInTheDocument();
       expect(screen.getByText(`Cuisson adaptée au moule ${target} cm ; surveiller le centre.`)).toBeInTheDocument();
     }
-    expect(screen.getByText("Par part (coupé en 8 parts égales).")).toBeInTheDocument();
+    expect(screen.getByText("Par part (gâteau coupé en 8 parts égales).")).toBeInTheDocument();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -78,11 +78,12 @@ describe("sélections pré-calculées dans le lecteur", () => {
     const onAnalyze = vi.fn(), onClose = vi.fn();
     const recipe = { ...starterRecipes[0], ingredients: ["3 steaks", "1 oignon"], servings: 2 };
     const { rerender } = render(<RecipeReader recipe={recipe} onClose={onClose} onAnalyze={onAnalyze} />);
-    expect(screen.getByText("Calories à calculer pour cette préparation.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "✨ Calculer calories & portions (IA)" }));
+    expect(screen.getByText(/kcal \/ 100 g/)).toBeInTheDocument();
+    expect(screen.getByText("Estimation locale indicative, basée sur des valeurs moyennes des ingrédients reconnus.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "✨ Recalculer les calories" }));
     expect(onAnalyze).toHaveBeenCalledOnce();
     rerender(<RecipeReader recipe={recipe} onClose={onClose} onAnalyze={onAnalyze} analyzing analysisStatus="Analyse IA en cours…" />);
-    expect(screen.getByRole("button", { name: "Analyse IA en cours…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "⏳ Calcul des calories…" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "1 personne" }));
     expect(screen.getByText("2 steaks")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Retour aux recettes" }));
@@ -96,8 +97,9 @@ describe("sélections pré-calculées dans le lecteur", () => {
     render(<RecipeReader recipe={recipe} onClose={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: "3 personnes" }));
     expect(screen.getByText("3 steaks")).toBeInTheDocument();
-    expect(screen.queryByText(/kcal \/ 100 g/)).not.toBeInTheDocument();
-    expect(screen.getByText(/Quantités locales indicatives/)).toBeInTheDocument();
+    expect(screen.getByText(/kcal \/ 100 g/)).toBeInTheDocument();
+    expect(screen.getByText("Estimation locale")).toBeInTheDocument();
+    expect(screen.getByText(/Adaptation et estimation locale indicatives/)).toBeInTheDocument();
   });
 
   it("garde lisible une ancienne recette qui dépasse les limites du format API", () => {
@@ -114,7 +116,7 @@ describe("sélections pré-calculées dans le lecteur", () => {
     render(<RecipeReader recipe={base} availableRecipes={[base, garnish]} onClose={() => {}} synchronized />);
     fireEvent.click(screen.getByRole("button", { name: "Moule 20 cm" }));
     expect(screen.getAllByText("200 g de farine")).toHaveLength(2);
-    expect(screen.getByText("~400 kcal / part")).toBeInTheDocument();
+    expect(screen.getByText("~400 kcal / part (1/8)")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Partager" }));
     const props = share.mock.calls.at(-1)![0];
     expect(props.recipe.ingredients).toEqual(["1 œuf", "200 g de farine", "1 œuf", "200 g de farine"]);

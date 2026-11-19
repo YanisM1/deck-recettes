@@ -1,5 +1,15 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-19 — Calories et création par fusion, étape 1/3 : diagnostic et réparation
+
+- npm run sync : origin/main déjà à jour ; npm install terminé, aucune vulnérabilité.
+- Diagnostic local : api/recipe-ai.ts est bien une fonction Vercel ; aucun vercel.json ni rewrite SPA catch-all ne l’intercepte. Le GET de production renvoie 405 (route atteinte, méthode non gérée), ce n’est pas une réponse HTML du fallback SPA.
+- Diagnostic Vercel : GEMINI_API_KEY est présent comme Secret en Production et Preview. gemini-key.txt et .env.local existent et sont ignorés par Git. La clé locale a été validée directement auprès de Google sans afficher sa valeur ; le modèle gemini-3.5-flash-lite figure dans la liste active.
+- Diagnostic Supabase distant : la requête PostgREST select=calories_value,calories_unit,calories_note,ai_scaling_data&limit=0 répond HTTP 200. Les quatre colonnes existent ; aucune migration ou modification RLS n’était nécessaire.
+- Cause fonctionnelle : recipeAiService masquait tous les HTTP/API/JSON invalides puis produisait le fallback local local-v1, qui ne calculait aucune calorie. RecipeReader indiquait donc « à calculer » sans donner la cause. En plus, l’action de recalcul sautait les composants Gemini déjà frais.
+- Correction : estimation locale prudente par ingrédients et unités françaises connus, repérage explicite de la source (IA/locale), explication d’erreur sans transmettre de détails sensibles, et refus d’une valeur locale si un ingrédient calorique est inconnu. Recalcul forcé depuis la vue de recette ; libellés précisant 1/8 ou 100 g cuits. Ajout d’un fallback de modèles Gemini en cas de modèle absent et d’un parseur JSON tolérant les fences Markdown.
+- Couverture ajoutée pour portions nutritionnelles locales, JSON/404 modèles, raisons d’erreur visibles et recalcul forcé. Validation et publication de cette étape en cours ; l’appel Gemini réel et la sauvegarde/lecture QA en production seront inscrits ici après le déploiement.
+
 ## 2026-11-19 — Calories visibles et variantes instantanées, étape 4/4 : fluidité et validation finale
 
 - Étape 3 publiée : 1e3c025, dpl_712iGvkvsc4WGxCZv5D4bgoYNBSc, READY ; 237 tests et build sans .env.local ni gemini-key.txt. Bloc sous le titre, anciennes recettes et contrôles instantanés disponibles en production.

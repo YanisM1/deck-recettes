@@ -1,5 +1,6 @@
 import { hasFreshCalories, normalizeAnalysisInput, recipeFingerprint, type AnalysisInput, type CaloriesInfo } from "./calorieAnalysis.js";
 import { PAN_TARGETS, SERVING_TARGETS, recipeAiKind, recipeAiVariantInput, type RecipeAiData, type RecipeAiVariant } from "./recipeAiTypes.js";
+import { estimateLocalNutrition } from "./localNutrition";
 
 const format = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
 const fractions: Record<string, number> = { "¼": .25, "½": .5, "¾": .75, "⅓": 1 / 3, "⅔": 2 / 3, "⅛": .125, "⅜": .375, "⅝": .625, "⅞": .875 };
@@ -42,10 +43,11 @@ export function scaleRecipeIngredients(input: AnalysisInput, factor: number, opt
 }
 // Conservative offline arithmetic, explicitly not presented as an AI analysis.
 // Unknown ingredients never produce invented nutritional values.
-export function createLocalRecipeAi(raw: AnalysisInput & { caloriesInfo?: CaloriesInfo | null }): RecipeAiData {
+export function createLocalRecipeAi(raw: AnalysisInput & { caloriesInfo?: CaloriesInfo | null }, options: { reason?: string } = {}): RecipeAiData {
   const input = normalizeAnalysisInput(raw);
   const sweet = recipeAiKind(input) === "sucre", basePan = input.panSize ?? 26, baseServings = input.servings ?? 2;
-  const known = hasFreshCalories(raw) && raw.caloriesInfo!.type === (sweet ? "gateau" : "plat_sale") && raw.caloriesInfo!.totalKcal / raw.caloriesInfo!.cookedWeightGrams * 100 <= 1000 ? raw.caloriesInfo! : undefined;
+  const previous = hasFreshCalories(raw) && raw.caloriesInfo!.type === (sweet ? "gateau" : "plat_sale") && raw.caloriesInfo!.totalKcal / raw.caloriesInfo!.cookedWeightGrams * 100 <= 1000 ? raw.caloriesInfo! : undefined;
+  const estimate = previous ?? estimateLocalNutrition(input);
   const map: Record<string, RecipeAiVariant> = {};
   for (const target of sweet ? PAN_TARGETS : SERVING_TARGETS) {
     const exact = sweet ? target === basePan : target === baseServings;
@@ -54,10 +56,17 @@ export function createLocalRecipeAi(raw: AnalysisInput & { caloriesInfo?: Calori
       ingredients: scaleRecipeIngredients(input, ratio, { pastry: sweet }),
       cookingNote: sweet ? `Adaptation locale indicative pour un moule de ${target} cm. Vérifiez la hauteur de pâte et la cuisson au centre ; le temps dépend du four.` : "Adaptation locale indicative ; goûtez et ajustez les assaisonnements. Les pièces entières sont arrondies.",
     };
-    if (exact && known && variant.ingredients.every((line, index) => line === input.ingredients[index])) variant.caloriesInfo = { ...known, fingerprint: recipeFingerprint(recipeAiVariantInput(input, variant, target)) };
+    if (exact && estimate && variant.ingredients.every((line, index) => line === input.ingredients[index])) variant.caloriesInfo = { ...estimate, fingerprint: recipeFingerprint(recipeAiVariantInput(input, variant, target)) };
+    else if (estimate?.model === "local-nutrition-v1") {
+      const variantInput = recipeAiVariantInput(input, variant, target);
+      variant.caloriesInfo = estimateLocalNutrition(variantInput);
+    }
     map[String(target)] = variant;
   }
+  const note = estimate
+    ? `Estimation locale indicative fondée sur les ingrédients reconnus.${options.reason ? ` ${options.reason}` : " Les valeurs peuvent différer du plat cuisiné."}`
+    : `Aucune estimation locale fiable : vérifiez que les quantités et ingrédients sont reconnus.${options.reason ? ` ${options.reason}` : " Réessayez le calcul IA avec une connexion."}`;
   return { version: 1, fingerprint: recipeFingerprint(input), source: "local", model: "local-v1", generatedAt: new Date(0).toISOString(), kind: recipeAiKind(input),
-    note: "Mode local : quantités indicatives, sans nouvelle estimation calorique. Relancez l’IA avec une connexion pour enrichir la recette.",
-    ...(known ? { caloriesInfo: known } : {}), ...(sweet ? { panSizesMap: map } : { servingsMap: map }) };
+    note,
+    ...(estimate ? { caloriesInfo: estimate } : {}), ...(sweet ? { panSizesMap: map } : { servingsMap: map }) };
 }

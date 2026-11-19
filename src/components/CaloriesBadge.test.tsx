@@ -11,8 +11,8 @@ describe("badge calorique", () => {
       kcal: cake ? 250 : 200, basis: cake ? "part" : "100g", ...(cake ? { parts: 8 as const } : {}),
       estimated: true, assumptions: ["Poids après cuisson estimé."], analyzedAt: "2026-11-18T12:00:00Z", model: "gemini-3.8-flash", fingerprint: recipeFingerprint(recipe) };
     render(<CaloriesBadge recipe={{ ...recipe, caloriesInfo: info }} />);
-    expect(screen.getByText(cake ? "~250 kcal / part" : "~200 kcal / 100 g")).toBeInTheDocument();
-    expect(screen.getByTitle(cake ? "Estimation pour 1 part sur 8" : "Estimation pour 100 g du plat cuit")).toBeInTheDocument();
+    expect(screen.getByText(cake ? "~250 kcal / part (1/8)" : "~200 kcal / 100 g")).toBeInTheDocument();
+    expect(screen.getByTitle(cake ? /Estimation pour 1 part sur 8/ : /Estimation pour 100 g du plat cuit/)).toBeInTheDocument();
   });
   it("masque l’absence d’estimation et les données périmées", () => {
     const recipe = starterRecipes[0];

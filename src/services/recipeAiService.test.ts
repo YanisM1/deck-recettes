@@ -9,14 +9,26 @@ it("envoie un seul appel structuré au serveur avec le carnet capturé", async (
   const fetcher = vi.fn().mockResolvedValue(Response.json({ code: "NOT_CONFIGURED" }, { status: 503 })); vi.stubGlobal("fetch", fetcher);
   const result = await analyzeRecipeAi(input, { collectionKey: "b".repeat(64) });
   expect(result.source).toBe("local");
+  expect(result.caloriesInfo?.model).toBe("local-nutrition-v1");
+  expect(result.note).toContain("clé Gemini du serveur n’est pas configurée");
   expect(fetcher).toHaveBeenCalledTimes(1);
   expect(fetcher).toHaveBeenCalledWith("/api/recipe-ai", expect.objectContaining({ method: "POST", headers: { "Content-Type": "application/json", "x-deckchef-key": "b".repeat(64) } }));
   expect(JSON.stringify(fetcher.mock.calls)).not.toContain("x-goog-api-key");
 });
-it("fonctionne hors ligne et sur erreur ou JSON invalide sans prétendre être Gemini", async () => {
-  for (const response of [() => Promise.reject(new TypeError("offline")), () => Promise.resolve(Response.json({ secret: "must-not-reach-ui" }, { status: 502 })), () => Promise.resolve(new Response("invalid-json")), () => Promise.resolve(Response.json(createLocalRecipeAi(input)))]) {
-    vi.stubGlobal("fetch", vi.fn().mockImplementation(response));
-    expect(await analyzeRecipeAi(input)).toEqual(createLocalRecipeAi(input));
+it("fonctionne hors ligne et expose la cause sans divulguer le corps d’erreur", async () => {
+  const responses = [
+    { run: () => Promise.reject(new TypeError("offline")), message: /hors ligne/ },
+    { run: () => Promise.resolve(Response.json({ secret: "must-not-reach-ui" }, { status: 502 })), message: /indisponible/ },
+    { run: () => Promise.resolve(new Response("invalid-json")), message: /illisible/ },
+    { run: () => Promise.resolve(Response.json({ code: "RATE_LIMITED" }, { status: 429 })), message: /limite temporaire/ },
+  ];
+  for (const { run, message } of responses) {
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(run));
+    const result = await analyzeRecipeAi(input);
+    expect(result.source).toBe("local");
+    expect(result.note).toMatch(message);
+    expect(result.caloriesInfo?.model).toBe("local-nutrition-v1");
+    expect(result.note).not.toContain("must-not-reach-ui");
   }
 });
 it("préserve l’annulation, y compris avant l’envoi", async () => {

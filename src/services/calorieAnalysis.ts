@@ -55,7 +55,7 @@ export function isCaloriesInfo(value: unknown): value is CaloriesInfo {
   const cake = value.type === "gateau";
   if (value.basis !== (cake ? "part" : "100g") || (cake ? value.parts !== 8 : value.parts != null)) return false;
   if (Math.round(cake ? value.totalKcal / 8 : value.totalKcal / value.cookedWeightGrams * 100) !== value.kcal) return false;
-  return Array.isArray(value.assumptions) && value.assumptions.length <= 12 && value.assumptions.every(line => typeof line === "string" && line.length <= 500) && typeof value.analyzedAt === "string" && Number.isFinite(Date.parse(value.analyzedAt)) && typeof value.model === "string" && (composite || /^gemini-[a-z0-9.-]{1,80}$/.test(value.model)) && typeof value.fingerprint === "string" && /^v1-[a-f0-9]{16}$/.test(value.fingerprint);
+  return Array.isArray(value.assumptions) && value.assumptions.length <= 12 && value.assumptions.every(line => typeof line === "string" && line.length <= 500) && typeof value.analyzedAt === "string" && Number.isFinite(Date.parse(value.analyzedAt)) && typeof value.model === "string" && (composite || /^gemini-[a-z0-9.-]{1,80}$/.test(value.model) || /^local-[a-z0-9.-]{1,80}$/.test(value.model)) && typeof value.fingerprint === "string" && /^v1-[a-f0-9]{16}$/.test(value.fingerprint);
 }
 export function hasFreshCalories(recipe: AnalysisInput & { caloriesInfo?: CaloriesInfo | null }): boolean {
   return isCaloriesInfo(recipe.caloriesInfo) && recipe.caloriesInfo.fingerprint === recipeFingerprint(recipe);

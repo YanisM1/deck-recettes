@@ -31,7 +31,7 @@ describe("recettes liées dans le lecteur", () => {
     const { container } = reader(base, [base, garnish]);
     expect(screen.getAllByRole("heading", { name: "Base · Gâteau au yaourt" })).toHaveLength(2);
     expect(screen.getAllByRole("heading", { name: "Ganache au chocolat" })).toHaveLength(2);
-    expect(screen.getByText("~300 kcal / part")).toBeInTheDocument();
+    expect(screen.getByText("~300 kcal / part (1/8)")).toBeInTheDocument();
     expect([...container.querySelectorAll(".step-number")].map(element => element.textContent)).toEqual(["01", "02", "03"]);
     expect(screen.getByText("Assembler les préparations selon les indications de la recette de base.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Moule 20 cm" }));

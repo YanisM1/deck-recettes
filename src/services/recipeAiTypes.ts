@@ -44,7 +44,7 @@ export function hasFractionalIndivisible(line: string): boolean {
 export function isRecipeAiData(value: unknown, input?: AnalysisInput): value is RecipeAiData {
   if (!record(value) || value.version !== 1 || !["gemini", "local"].includes(String(value.source)) || !["sale", "sucre"].includes(String(value.kind))) return false;
   if (typeof value.fingerprint !== "string" || !/^v1-[a-f0-9]{16}$/.test(value.fingerprint) || typeof value.generatedAt !== "string" || !Number.isFinite(Date.parse(value.generatedAt))) return false;
-  if (typeof value.model !== "string" || !(value.source === "local" ? value.model === "local-v1" : /^gemini-[a-z0-9.-]{1,80}$/.test(value.model))) return false;
+  if (typeof value.model !== "string" || !(value.source === "local" ? ["local-v1", "local-nutrition-v1"].includes(value.model) : /^gemini-[a-z0-9.-]{1,80}$/.test(value.model))) return false;
   if (typeof value.note !== "string" || value.note.length > 1000 || (value.caloriesInfo != null && !isCaloriesInfo(value.caloriesInfo))) return false;
   if (value.source === "gemini" && (!value.caloriesInfo || !String(value.caloriesInfo.model).startsWith("gemini-"))) return false;
   if (input && (value.fingerprint !== recipeFingerprint(input) || value.kind !== recipeAiKind(input) || (value.caloriesInfo && value.caloriesInfo.fingerprint !== recipeFingerprint(input)))) return false;

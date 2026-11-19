@@ -451,14 +451,12 @@ export function RecipeForm({
             <div className="calorie-analysis">
               <button type="button" className="secondary-button" disabled={analyzing || busy || !canAnalyze}
                 onClick={() => { void analyze(); }}>
-                {analyzing ? "Analyse IA en cours…" : "✨ Calculer calories & portions (IA)"}
+                {analyzing ? "⏳ Calcul des calories…" : freshCalories ? "✨ Recalculer les calories" : "✨ Calculer calories & portions (IA)"}
               </button>
               {analyzing && <p role="status">Calories et variantes en cours d’analyse. Vous pouvez enregistrer la recette.</p>}
               {analysisError && <p className="notice" role="alert">{analysisError} Vous pouvez enregistrer sans analyse.</p>}
               <CaloriesBadge recipe={{ ...analysisInput, caloriesInfo: freshCalories }} />
-              {freshAiData && <p className="section-caption">{freshAiData.source === "gemini"
-                ? "Variantes IA enregistrées : leur sélection sera instantanée."
-                : "Adaptation locale disponible. Relancez l’IA avec une connexion pour une estimation complète."}</p>}
+              {freshAiData && <p className="section-caption">{freshAiData.note}</p>}
               {freshCalories && <details className="calorie-assumptions">
                 <summary>À propos de cette estimation</summary>
                 <p>{freshCalories.basis === "part" ? "Gâteau divisé en 8 parts." : "Énergie rapportée à 100 g de préparation cuite."}</p>

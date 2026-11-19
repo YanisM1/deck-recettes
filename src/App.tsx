@@ -139,7 +139,7 @@ export default function App() {
         <RecipeReader
           key={`reader-${selected.id}`}
           recipe={selected}
-          onAnalyze={canEdit ? () => { void recipeAi.analyze(selected, true); } : undefined}
+          onAnalyze={canEdit ? () => { void recipeAi.analyze(selected, true, true); } : undefined}
           analyzing={selectedAiStatus?.state === "analyzing"}
           analysisStatus={selectedAiStatus?.message}
           availableRecipes={canEdit ? recipes.recipes : []}

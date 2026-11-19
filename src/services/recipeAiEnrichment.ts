@@ -50,8 +50,9 @@ export function analyzeAndEnrichRecipe(store: RecipeStore, recipe: Recipe, obser
         notify({ state: "stale", message: "La recette a changé. Relancez l’analyse pour son nouveau contenu." });
         return null;
       }
-      notify(data.source === "gemini" ? { state: "ready", message: "Calories et variantes IA enregistrées." }
-        : { state: "local", message: "Mode local : variantes de secours enregistrées. Réessayez l’IA quand la connexion revient." });
+      notify(data.source === "gemini" ? { state: "ready", message: "Calcul IA : calories et variantes enregistrées." }
+        : data.caloriesInfo ? { state: "local", message: data.note }
+        : { state: "error", message: data.note });
       return data;
     } catch {
       if (!job.controller.signal.aborted && isCurrent()) notify({ state: "error", message: "Impossible d’enregistrer l’analyse. Votre recette reste sauvegardée." });
