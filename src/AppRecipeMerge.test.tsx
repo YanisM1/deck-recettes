@@ -4,19 +4,18 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "./App";
 import * as sync from "./services/recipeSync";
 import { RecipeStore } from "./services/recipeStore";
-import { analyzeRecipeAi } from "./services/recipeAiService";
 import { setPreferences } from "./services/preferences";
 import * as imageCompression from "./services/imageCompression";
 
-vi.mock("./services/recipeAiService", () => ({ analyzeRecipeAi: vi.fn() }));
-afterEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+afterEach(() => { localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-it("enregistre une nouvelle recette fusionnée avant de lancer son analyse, sans modifier ses sources", async () => {
+it("enregistre une nouvelle recette fusionnée sans lancer de requête d’analyse", async () => {
   localStorage.clear();
   const store = new RecipeStore(localStorage, null, "app-merge-qa");
   vi.spyOn(sync, "getRecipeStore").mockReturnValue(store);
   vi.spyOn(sync, "useRecipes").mockImplementation(() => useSyncExternalStore(store.subscribe, store.getSnapshot));
-  vi.mocked(analyzeRecipeAi).mockReturnValue(new Promise(() => {}));
+  const fetcher = vi.fn();
+  vi.stubGlobal("fetch", fetcher);
   actPreferences();
   const sources = store.getSnapshot().recipes.filter(recipe => [
     "Pancakes du dimanche", "Cookies au chocolat",
@@ -50,10 +49,7 @@ it("enregistre une nouvelle recette fusionnée avant de lancer son analyse, sans
   const reloaded = new RecipeStore(localStorage, null, "app-merge-qa").getSnapshot().recipes.find(recipe => recipe.id === created!.id);
   expect(reloaded).toMatchObject({ title: "Pancakes chocolatés", image_url: compressedPhoto, linkedRecipeIds: [] });
   expect(screen.getByRole("dialog", { name: "Pancakes chocolatés" })).toBeInTheDocument();
-  await waitFor(() => expect(analyzeRecipeAi).toHaveBeenCalledOnce());
-  expect(analyzeRecipeAi).toHaveBeenCalledWith(expect.objectContaining({
-    title: created!.title, ingredients: created!.ingredients, steps: created!.steps,
-  }), expect.objectContaining({ signal: expect.any(AbortSignal) }));
+  expect(fetcher).not.toHaveBeenCalled();
 });
 
 function actPreferences() { setPreferences({ layoutMode: "cards" }); }

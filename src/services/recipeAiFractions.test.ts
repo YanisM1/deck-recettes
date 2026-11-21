@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createLocalRecipeAi, scaleRecipeIngredients } from "./recipeAiFallback";
-import { hasFractionalIndivisible, isRecipeAiData } from "./recipeAiTypes";
-import type { AnalysisInput } from "./calorieAnalysis";
-const dish: AnalysisInput = { title: "Pièces et fractions", category: "sale", servings: 2, ingredients: ["1½ œuf", "1 1/2 steak", "⅜ oignon"], steps: ["Cuire à la poêle."] };
+import { createLocalRecipeAdaptations, scaleRecipeIngredients } from "./recipeAdaptation";
+import { hasFractionalIndivisible, isRecipeAiData, type RecipeAdaptationInput } from "./recipeAiTypes";
+const dish: RecipeAdaptationInput = { title: "Pièces et fractions", category: "sale", servings: 2, ingredients: ["1½ œuf", "1 1/2 steak", "⅜ oignon"], steps: ["Cuire à la poêle."] };
 describe("fractions mixtes et quantités indivisibles", () => {
   it.each(["1½ œuf", "1 1/2 steak", "1 1 / 2 oignon", "⅜ oignon", "1⅝ œuf", "1,5 steak", "1/2 œuf"])("détecte la pièce fractionnaire %s", line => {
     expect(hasFractionalIndivisible(line)).toBe(true);
@@ -10,11 +9,13 @@ describe("fractions mixtes et quantités indivisibles", () => {
   it.each(["1.5 g de levure", "1½ g de levure", "1 1/2 g de sel", "2 œufs", "1 à 2 steaks", "1 2/2 œufs"])("accepte les mesures ou pièces entières %s", line => {
     expect(hasFractionalIndivisible(line)).toBe(false);
   });
-  it("arrondit chaque variante hors ligne sans laisser de pièces fractionnaires", () => {
-    const data = createLocalRecipeAi(dish);
+  it("préserve les quantités d’origine et arrondit les variantes hors ligne", () => {
+    const data = createLocalRecipeAdaptations(dish);
     expect(isRecipeAiData(data, dish)).toBe(true);
-    expect(data.servingsMap!["2"].ingredients).toEqual(["2 œuf", "2 steak", "1 oignon"]);
-    for (const variant of Object.values(data.servingsMap!)) expect(variant.ingredients.some(hasFractionalIndivisible)).toBe(false);
+    expect(data.servingsMap!["2"].ingredients).toEqual(dish.ingredients);
+    for (const [target, variant] of Object.entries(data.servingsMap!)) {
+      if (target !== "2") expect(variant.ingredients.some(hasFractionalIndivisible)).toBe(false);
+    }
   });
   it("rééquilibre les quantités pâtissières autour des œufs d’origine mixtes", () => {
     const input = { ...dish, category: "sucre" as const, isCake: true, panSize: 20 as const, ingredients: ["1½ œuf", "150 g de farine"] };
@@ -29,7 +30,7 @@ describe("fractions mixtes et quantités indivisibles", () => {
   });
   it("arrondit les pièces de la salade réelle sans confondre le citron avec son assaisonnement", () => {
     const salad = { ...dish, ingredients: ["1 petit concombre", "3 c. à soupe d’huile d’olive", "1 citron, sel et poivre"] };
-    const result = createLocalRecipeAi(salad);
+    const result = createLocalRecipeAdaptations(salad);
     expect(result.servingsMap!["8"].ingredients).toEqual(["4 petit concombre", "7,5 c. à soupe d’huile d’olive", "4 citron, sel et poivre"]);
     expect(isRecipeAiData(result, salad)).toBe(true);
     const cucumberCounts = Object.values(result.servingsMap!).map(variant => Number(variant.ingredients[0].split(" ")[0]));

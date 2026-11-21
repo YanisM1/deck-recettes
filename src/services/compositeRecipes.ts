@@ -1,15 +1,10 @@
 import type { Recipe } from "../types";
-import { hasFreshCalories, isCaloriesInfo, recipeFingerprint, type CaloriesInfo } from "./calorieAnalysis";
 
 export const MAX_LINKED_RECIPES = 20;
 export const MAX_COMPOSITE_RECIPES = 64;
 const MAX_DEPTH = 20;
 const RECIPE_ID = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
-export type CompositeRecipe = Recipe & {
-  servings?: number;
-  linkedRecipeIds?: string[];
-  caloriesInfo?: CaloriesInfo;
-};
+export type CompositeRecipe = Recipe;
 export type CompositeSection = {
   recipeId: string;
   title: string;
@@ -29,8 +24,6 @@ export type ComposedRecipe = {
   assemblyStep?: string;
   linkedRecipeIds: string[];
   warnings: CompositeWarning[];
-  caloriesInfo?: CaloriesInfo;
-  caloriesUnavailableReason?: string;
 };
 
 export function normalizeLinkedRecipeIds(value: unknown, rootId?: string): string[] {
@@ -75,15 +68,15 @@ export function validateRecipeLinks(rootId: string | undefined, linkedIds: reado
 export function composeRecipes(root: CompositeRecipe, recipes: readonly CompositeRecipe[]): ComposedRecipe {
   const byId = new Map(recipes.map(recipe => [recipe.id, recipe]));
   byId.set(root.id, root); // An unsaved editor draft takes precedence over its stored base.
-  const sections: CompositeSection[] = [], components: CompositeRecipe[] = [], warnings: CompositeWarning[] = [];
+  const sections: CompositeSection[] = [], warnings: CompositeWarning[] = [];
   const visited = new Set<string>(), path = new Set<string>();
   const visit = (id: string, depth: number) => {
     if (path.has(id)) {
-      warnings.push({ type: "cycle", recipeId: id, message: "Une boucle de recettes liées a été ignorée. Corrigez les liaisons avant le calcul global." });
+      warnings.push({ type: "cycle", recipeId: id, message: "Une liaison circulaire a été ignorée." });
       return;
     }
     if (visited.has(id)) {
-      warnings.push({ type: "duplicate", recipeId: id, message: `« ${byId.get(id)?.title ?? "Recette"} » est déjà incluse et n’est comptée qu’une fois.` });
+      warnings.push({ type: "duplicate", recipeId: id, message: `« ${byId.get(id)?.title ?? "Recette"} » figure déjà dans cet assemblage.` });
       return;
     }
     if (depth > MAX_DEPTH || visited.size >= MAX_COMPOSITE_RECIPES) {
@@ -97,7 +90,6 @@ export function composeRecipes(root: CompositeRecipe, recipes: readonly Composit
     }
     visited.add(id);
     path.add(id);
-    components.push(recipe);
     sections.push({ recipeId: recipe.id, title: recipe.title, isBase: id === root.id, ingredients: [...recipe.ingredients], steps: [...recipe.steps] });
     try {
       for (const next of normalizeLinkedRecipeIds(recipe.linkedRecipeIds)) visit(next, depth + 1);
@@ -111,43 +103,5 @@ export function composeRecipes(root: CompositeRecipe, recipes: readonly Composit
   const assemblyStep = sections.length > 1 ? "Assembler les préparations selon les indications de la recette de base." : undefined;
   const steps = sections.flatMap(section => section.steps);
   if (assemblyStep) steps.push(assemblyStep);
-  const result: ComposedRecipe = { sections, ingredients, steps, assemblyStep, linkedRecipeIds: sections.slice(1).map(section => section.recipeId), warnings };
-  if (warnings.some(warning => warning.type !== "duplicate")) {
-    result.caloriesUnavailableReason = "L’assemblage est incomplet : ses calories globales ne peuvent pas être calculées.";
-    return result;
-  }
-  // A portable share already contains its complete flattened batch. Preserve
-  // its fresh derived estimate; only a new summation needs own Gemini analyses.
-  if (components.length === 1 && hasFreshCalories(root)) {
-    result.caloriesInfo = root.caloriesInfo;
-    return result;
-  }
-  const missingAnalysis = components.find(recipe => !hasFreshCalories(recipe) || !recipe.caloriesInfo?.model.startsWith("gemini-"));
-  if (missingAnalysis) {
-    result.caloriesUnavailableReason = `Analyse à calculer ou à actualiser pour « ${missingAnalysis.title} ».`;
-    return result;
-  }
-  const totalKcal = components.reduce((sum, recipe) => sum + recipe.caloriesInfo!.totalKcal, 0);
-  const cookedWeightGrams = components.reduce((sum, recipe) => sum + recipe.caloriesInfo!.cookedWeightGrams, 0);
-  const cake = root.isCake === true || root.caloriesInfo!.type === "gateau";
-  const kcal = Math.round(cake ? totalKcal / 8 : totalKcal / cookedWeightGrams * 100);
-  if (![totalKcal, cookedWeightGrams].every(value => Number.isFinite(value) && value > 0 && value <= Number.MAX_SAFE_INTEGER) || !Number.isSafeInteger(kcal) || kcal < 0) {
-    result.caloriesUnavailableReason = "Les valeurs de cet assemblage dépassent les limites de calcul.";
-    return result;
-  }
-  const combined: CaloriesInfo = {
-    type: cake ? "gateau" : "plat_sale",
-    basis: cake ? "part" : "100g",
-    totalKcal, cookedWeightGrams, kcal,
-    ...(cake ? { parts: 8 as const } : {}),
-    estimated: true,
-    assumptions: ["Addition des préparations complètes, sans compter deux fois une recette liée.", ...new Set(components.flatMap(recipe => recipe.caloriesInfo!.assumptions))].slice(0, 8),
-    analyzedAt: components.map(recipe => recipe.caloriesInfo!.analyzedAt).sort()[0],
-    model: "composite-v1",
-    // Distinct from the base analysis: never persist this computed result on root.
-    fingerprint: recipeFingerprint({ ...root, ingredients, steps }),
-  };
-  if (isCaloriesInfo(combined)) result.caloriesInfo = combined;
-  else result.caloriesUnavailableReason = "Les valeurs de cet assemblage dépassent les limites de calcul.";
-  return result;
+  return { sections, ingredients, steps, assemblyStep, linkedRecipeIds: sections.slice(1).map(section => section.recipeId), warnings };
 }

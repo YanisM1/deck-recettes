@@ -1,4 +1,5 @@
 import { isPanSize, type LayoutMode, type Recipe } from "../types";
+import type { ManualCaloriesUnit } from "../services/manualCalories";
 
 const WIDTH = 393;
 const MAX_CANVAS_EDGE = 8192;
@@ -17,7 +18,7 @@ interface RecipeImageOptions {
   themeElement: HTMLElement;
   ingredients?: readonly string[];
   servings?: number;
-  calories?: { value: number; unit: "portion" | "100g" };
+  calories?: { value: number; unit: ManualCaloriesUnit };
 }
 
 function readColors(element: HTMLElement, book: boolean) {
@@ -201,10 +202,10 @@ function badgeLabels({ recipe, servings, calories }: RecipeImageOptions) {
   if (isPanSize(recipe.panSize)) labels.push(`Moule ${recipe.panSize} cm`);
   if (servings && Number.isInteger(servings) && servings > 0)
     labels.push(`${servings} ${servings === 1 ? "personne" : "personnes"}`);
-  if (calories && Number.isFinite(calories.value) && calories.value >= 0)
-    labels.push(
-      `${NUMBER_FORMAT.format(calories.value)} kcal/${calories.unit === "100g" ? "100 g" : "part"}`,
-    );
+  if (calories && Number.isFinite(calories.value) && calories.value >= 0) {
+    const suffix = { per_serving: "kcal / part", per_100g: "kcal / 100 g", total: "kcal au total" }[calories.unit];
+    labels.push(`${NUMBER_FORMAT.format(calories.value)} ${suffix}`);
+  }
   return labels;
 }
 

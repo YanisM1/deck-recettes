@@ -1,5 +1,14 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-21 — Calories manuelles et ajout de trois recettes
+
+- Retrait des routes, services et interfaces qui calculaient ou estimaient les calories. Les adaptations locales de quantités sont conservées ; les anciennes calories IA restent dans la base, mais ne sont jamais interprétées comme une saisie manuelle. Les données de moule, de portions, de carnet et les règles RLS sont conservées.
+- Formulaire de création, modification et fusion : saisie entière facultative avec les unités Par part, Pour 100 g et Au total, identiques pour les catégories salée et sucrée. Les badges Carte, Livre, lecteur et partage utilisent seulement cette valeur manuelle. Suppression possible en effaçant le champ. Persistance localStorage/Supabase compatible avec les colonnes facultatives et tests de file locale inclus.
+- `supabase/schema.sql` et migration DeckChef `20261121120000_deckchef_manual_calories.sql` acceptent les trois unités sans réécrire les valeurs existantes. La migration distante n’a pas été appliquée : le CLI Supabase et son jeton ne sont pas disponibles dans cet environnement ; un essai de lecture précédent de l’API de gestion a renvoyé HTTP 403. La contrainte distante existante n’autorise encore que les anciennes chaînes.
+- Trois images culinaires WebP ajoutées dans `public/recipes/` (960 × 1200, environ 165–204 Ko). Le JSON du script idempotent dans `scripts/seed-3-patisseries.json` a été comparé au texte fourni : 27 ingrédients et 36 étapes correspondent exactement. Les tests simulés couvrent lecture, insertion sans doublon, conflit de titre, mauvais code et absence d’écriture en mode vérification.
+- L’insertion distante n’a pas été tentée : `DECKCHEF_SEED_COLLECTION_KEY` n’est pas configuré dans `.env.local`, donc le carnet cible ne peut pas être identifié sous l’en-tête privé obligatoire. Aucune recette de production n’a été créée/modifiée ; aucun changement de schéma n’a été exécuté à distance. Push et déploiement volontairement différés, car le client accepterait des valeurs que le contrôle Supabase actuel rejetterait.
+- Vérification locale finale : `npm test` réussit avec 239 tests Vitest et 3 tests du script ; `npm run build` réussit sans `.env.local`. Vite signale seulement le bundle JavaScript supérieur à 500 Ko. Contrôle visuel Safari/iPhone non exécuté.
+
 ## 2026-11-19 — Nouvelle recette par fusion, étape 2/3 : sélection et édition indépendante
 
 - Dans le formulaire « + », ajout de deux choix en haut : Nouvelle recette et Lier des recettes. L’écran de sélection exige au moins deux sources et garde son bouton désactivé avant ce seuil.

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,11 +19,14 @@ import {
 import { Modal } from "./Modal";
 import { RecipeImage } from "./RecipeImage";
 import { compressImage } from "../services/imageCompression";
-import { analyzeRecipeAi } from "../services/recipeAiService";
-import { hasFreshRecipeAi, type RecipeAiData } from "../services/recipeAiTypes";
-import { hasFreshCalories, recipeFingerprint, type CaloriesInfo } from "../services/calorieAnalysis";
-import { CaloriesBadge } from "./CaloriesBadge";
 import { buildMergedRecipeDraft } from "../services/recipeMerge";
+import {
+  MANUAL_CALORIES_LABELS,
+  MANUAL_CALORIES_UNITS,
+  MAX_MANUAL_CALORIES,
+  validateManualCalories,
+  type ManualCaloriesUnit,
+} from "../services/manualCalories";
 type Line = { id: string; value: string };
 function makeLines(values: string[]): Line[] {
   return (values.length ? values : [""]).map((value) => ({
@@ -126,7 +129,7 @@ export function RecipeForm({
     [title, setTitle] = useState(recipe?.title || ""),
     [category, setCategory] = useState<Category>(recipe?.category || "sale"),
     [isCake, setIsCake] = useState(
-      recipe?.isCake === true || isPanSize(recipe?.panSize),
+      recipe?.isCake ?? (isPanSize(recipe?.panSize) || recipe?.category === "sucre"),
     ),
     [panSize, setPanSize] = useState<PanSize>(
       isPanSize(recipe?.panSize) ? recipe.panSize : 26,
@@ -137,55 +140,18 @@ export function RecipeForm({
     [steps, setSteps] = useState(() => makeLines(recipe?.steps || [])),
     [image, setImage] = useState(recipe?.image_url || ""),
     [servings, setServings] = useState(String(recipe?.servings ?? 2)),
+    [caloriesValue, setCaloriesValue] = useState(String(recipe?.caloriesValue ?? "")),
+    [caloriesUnit, setCaloriesUnit] = useState<ManualCaloriesUnit>(recipe?.caloriesUnit ?? "per_serving"),
     [linkedRecipeIds, setLinkedRecipeIds] = useState<string[]>(recipe?.linkedRecipeIds ?? []),
-    [caloriesInfo, setCaloriesInfo] = useState<CaloriesInfo | undefined>(recipe?.caloriesInfo),
-    [aiScalingData, setAiScalingData] = useState<RecipeAiData | undefined>(recipe?.aiScalingData),
-    [analyzing, setAnalyzing] = useState(false),
-    [analysisError, setAnalysisError] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const photo = useRef<HTMLInputElement>(null),
     camera = useRef<HTMLInputElement>(null),
-    titleId = useId();
-  const request = useRef<AbortController | null>(null);
+    titleId = useId(),
+    caloriesId = useId();
   const baseServings = Number(servings);
   const validServings = Number.isInteger(baseServings) && baseServings >= 1 && baseServings <= 999;
-  const analysisInput = {
-    title: title.trim(), category, isCake: isCake || category === "sucre", panSize: isCake || category === "sucre" ? panSize : undefined,
-    ingredients: ingredients.map(line => line.value.trim()).filter(Boolean),
-    steps: steps.map(line => line.value.trim()).filter(Boolean), servings: baseServings,
-  };
-  const fingerprint = recipeFingerprint(analysisInput);
-  const freshCalories = hasFreshCalories({ ...analysisInput, caloriesInfo }) ? caloriesInfo : undefined;
-  const freshAiData = hasFreshRecipeAi({ ...analysisInput, aiScalingData }) ? aiScalingData : undefined;
-  const canAnalyze = !!analysisInput.title && !!analysisInput.ingredients.length && !!analysisInput.steps.length && validServings;
   const selectedSources = availableRecipes.filter(candidate => selectedRecipeIds.includes(candidate.id));
-  useEffect(() => {
-    setAnalyzing(false);
-    setAnalysisError("");
-    return () => { request.current?.abort(); request.current = null; };
-  }, [fingerprint]);
-  async function analyze() {
-    if (request.current || !canAnalyze) return;
-    const controller = new AbortController();
-    request.current = controller;
-    setAnalyzing(true);
-    setAnalysisError("");
-    try {
-      const result = await analyzeRecipeAi(analysisInput, { signal: controller.signal });
-      if (!controller.signal.aborted) {
-        setAiScalingData(result);
-        setCaloriesInfo(result.caloriesInfo);
-      }
-    } catch (error) {
-      if (!controller.signal.aborted) setAnalysisError((error as Error).message || "L’analyse est indisponible pour le moment.");
-    } finally {
-      if (request.current === controller) {
-        request.current = null;
-        setAnalyzing(false);
-      }
-    }
-  }
   async function importPhoto(file: File | undefined) {
     if (!file) return;
     setBusy(true);
@@ -209,10 +175,9 @@ export function RecipeForm({
       setImage("");
       setIngredients(makeLines(draft.ingredients));
       setSteps(makeLines(draft.steps));
+      setCaloriesValue("");
+      setCaloriesUnit("per_serving");
       setLinkedRecipeIds([]);
-      setCaloriesInfo(undefined);
-      setAiScalingData(undefined);
-      setAnalysisError("");
       setError("");
       setStep(0);
       setFlow("merged");
@@ -250,6 +215,9 @@ export function RecipeForm({
       return;
     }
     try {
+      const manualCalories = caloriesValue.trim() === ""
+        ? { caloriesValue: null, caloriesUnit: null }
+        : validateManualCalories(Number(caloriesValue), caloriesUnit);
       onSave(
         {
           title,
@@ -257,11 +225,11 @@ export function RecipeForm({
           ingredients: ingredients.map((v) => v.value),
           steps: steps.map((v) => v.value),
           image_url: image,
-          isCake: isCake || category === "sucre",
-          panSize: isCake || category === "sucre" ? panSize : undefined,
+          isCake,
+          panSize: isCake ? panSize : undefined,
           servings: baseServings,
-          caloriesInfo: freshCalories,
-          ...(freshAiData ? { aiScalingData: freshAiData } : {}),
+          ...manualCalories,
+          aiScalingData: recipe?.aiScalingData,
           // Existing legacy links are retained when editing; new and merged
           // recipes are independent records with no private recipe links.
           linkedRecipeIds: recipe ? linkedRecipeIds.filter(id => availableRecipes.some(candidate => candidate.id === id)) : [],
@@ -345,7 +313,10 @@ export function RecipeForm({
               <button
                 type="button"
                 aria-pressed={category === "sucre"}
-                onClick={() => setCategory("sucre")}
+                onClick={() => {
+                  if (!recipe && category !== "sucre" && flow === "new") setIsCake(true);
+                  setCategory("sucre");
+                }}
               >
                 Sucré
               </button>
@@ -357,15 +328,15 @@ export function RecipeForm({
                 onChange={event => setServings(event.currentTarget.value)} />
             </label>
             <div className="cake-options">
-              {category === "sale" && <label className="cake-toggle">
+              <label className="cake-toggle">
                 <input
                   type="checkbox"
                   checked={isCake}
                   onChange={(e) => setIsCake(e.target.checked)}
                 />
                 <span>🎂 C’est un gâteau / moule</span>
-              </label>}
-              {(isCake || category === "sucre") && (
+              </label>
+              {isCake && (
                 <fieldset className="pan-size-options">
                   <legend>Taille du moule d’origine</legend>
                   <div>
@@ -475,23 +446,37 @@ export function RecipeForm({
               Chaque geste compte. Racontez-les dans l’ordre.
             </p>
             <EditableLines lines={steps} onChange={setSteps} kind="steps" />
-            <div className="calorie-analysis">
-              <button type="button" className="secondary-button" disabled={analyzing || busy || !canAnalyze}
-                onClick={() => { void analyze(); }}>
-                {analyzing ? "⏳ Calcul des calories…" : freshCalories ? "✨ Recalculer les calories" : "✨ Calculer calories & portions (IA)"}
-              </button>
-              {analyzing && <p role="status">Calories et variantes en cours d’analyse. Vous pouvez enregistrer la recette.</p>}
-              {analysisError && <p className="notice" role="alert">{analysisError} Vous pouvez enregistrer sans analyse.</p>}
-              <CaloriesBadge recipe={{ ...analysisInput, caloriesInfo: freshCalories }} />
-              {freshAiData && <p className="section-caption">{freshAiData.note}</p>}
-              {freshCalories && <details className="calorie-assumptions">
-                <summary>À propos de cette estimation</summary>
-                <p>{freshCalories.basis === "part" ? "Gâteau divisé en 8 parts." : "Énergie rapportée à 100 g de préparation cuite."}</p>
-                <ul>{freshCalories.assumptions.map((assumption, index) => <li key={index}>{assumption}</li>)}</ul>
-              </details>}
-              <p className="section-caption">La recette est enregistrée immédiatement ; l’analyse peut se terminer en arrière-plan.</p>
-              {flow === "merged" && <p className="section-caption">L’analyse portera sur la nouvelle recette entière, avec tous les ingrédients et toutes les étapes réunis.</p>}
-            </div>
+            <fieldset className="manual-calories-fields">
+              <legend>🔥 Calories (optionnel)</legend>
+              <p className="section-caption" id={`${caloriesId}-help`}>
+                Laissez vide pour ne rien afficher sur la recette.
+              </p>
+              <label htmlFor={caloriesId}>Calories (kcal)</label>
+              <input
+                id={caloriesId}
+                aria-describedby={`${caloriesId}-help`}
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={MAX_MANUAL_CALORIES}
+                step={1}
+                value={caloriesValue}
+                onChange={(event) => setCaloriesValue(event.currentTarget.value)}
+              />
+              <div className="manual-calories-units" role="group" aria-label="Unité des calories">
+                {MANUAL_CALORIES_UNITS.map((unit) => (
+                  <button
+                    key={unit}
+                    type="button"
+                    className={caloriesUnit === unit ? "selected" : ""}
+                    aria-pressed={caloriesUnit === unit}
+                    onClick={() => setCaloriesUnit(unit)}
+                  >
+                    {MANUAL_CALORIES_LABELS[unit]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
           </>
         )}
         {error && (

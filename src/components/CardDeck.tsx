@@ -5,12 +5,11 @@ import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
 import { CaloriesBadge } from "./CaloriesBadge";
 import { MOTION_TRANSITION, useDirectNavigation } from "../hooks/useDirectNavigation";
-import { composeRecipes } from "../services/compositeRecipes";
 
 const stackTransform = (depth: number) => `translate3d(0, ${depth * 7}px, 0) rotate3d(0, 0, 1, ${depth * 2}deg) scale3d(${1 - depth * 0.025}, ${1 - depth * 0.025}, 1)`;
 const movingTransform = (x: number, y = Math.abs(x) * 0.04, angle = x * 0.05) => `translate3d(${x}px, ${y}px, 0) rotate3d(0, 0, 1, ${angle}deg) scale3d(1, 1, 1)`;
 
-export const CardDeck = memo(function CardDeck({ recipes, onOpen, allRecipes = recipes }: { recipes: Recipe[]; allRecipes?: Recipe[]; onOpen: (recipe: Recipe) => void }) {
+export const CardDeck = memo(function CardDeck({ recipes, onOpen }: { recipes: Recipe[]; onOpen: (recipe: Recipe) => void }) {
   const layers = useRef(new Map<number, HTMLDivElement>());
   const { index, go, reset, scene, gestures, isBusy } = useDirectNavigation({
     maxIndex: recipes.length, gestureSign: 1, extent: 420,
@@ -40,8 +39,6 @@ export const CardDeck = memo(function CardDeck({ recipes, onOpen, allRecipes = r
     <div className="deck-scene" ref={scene} {...gestures} aria-label="Paquet de recettes" data-active-index={index}>
       {offsets.map(offset => {
         const itemIndex = index + offset, recipe = recipes[itemIndex], active = offset === 0;
-        const composite = recipe?.linkedRecipeIds?.length ? composeRecipes(recipe, allRecipes) : undefined;
-        const calorieRecipe = composite ? { ...recipe, ingredients: composite.ingredients, steps: composite.steps, caloriesInfo: composite.caloriesInfo } : recipe;
         return <div key={recipe?.id ?? "deck-end"} ref={element => { if (element) layers.current.set(itemIndex, element); else layers.current.delete(itemIndex); }}
           className={`recipe-card card-depth-${offset}${recipe ? "" : " deck-end-card"}`}
           data-layer={offset} data-motion-offset={offset} data-recipe-id={recipe?.id} aria-hidden={!active} inert={!active}
@@ -51,7 +48,7 @@ export const CardDeck = memo(function CardDeck({ recipes, onOpen, allRecipes = r
             <span className="card-shade" />
             <span className="category-badge">{recipe.category === "sale" ? "SALÉ" : "SUCRÉ"}</span>
             <PanBadge recipe={recipe} className="card-pan-badge" />
-            <CaloriesBadge recipe={calorieRecipe} showMissing className={`card-calories-badge${recipe.panSize ? " with-pan" : ""}`} />
+            <CaloriesBadge recipe={recipe} className={`card-calories-badge${recipe.panSize ? " with-pan" : ""}`} />
             <span className="card-number">{String(itemIndex + 1).padStart(2, "0")}</span>
             <span className="card-copy"><span className="card-overline">FAIT MAISON, TOUT SIMPLEMENT</span>
               <span className="card-title">{recipe.title}</span>

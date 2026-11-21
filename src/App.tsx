@@ -11,14 +11,11 @@ import { RecipeForm } from "./components/RecipeForm";
 import { Modal } from "./components/Modal";
 import { useRecipeShareRoute } from "./hooks/useRecipeShareRoute";
 import { filterRecipes, type Filters, type Recipe } from "./types";
-import { useRecipeAiActions } from "./hooks/useRecipeAiActions";
-import { hasFreshRecipeAi } from "./services/recipeAiTypes";
 export default function App() {
   const preferences = usePreferences(),
     theme = themes.find((t) => t.id === preferences.theme)!,
     [settings, setSettings] = useState(false);
   const recipes = useRecipes();
-  const recipeAi = useRecipeAiActions();
   const [filters, setFilters] = useState<Filters>({ sale: true, sucre: true }),
     [selectedId, setSelectedId] = useState<string | null>(null),
     [editing, setEditing] = useState<Recipe | "new" | null>(null);
@@ -27,7 +24,6 @@ export default function App() {
     ? shareRoute.recipe
     : recipes.recipes.find((recipe) => recipe.id === selectedId);
   const canEdit = !shareRoute.route || shareRoute.editable;
-  const selectedAiStatus = selected ? recipeAi.statusFor(selected) : undefined;
   function closeRecipe() {
     setSelectedId(null);
     if (shareRoute.route) shareRoute.close();
@@ -93,14 +89,12 @@ export default function App() {
           <RecipeBook
             key={`book-${visible.map((r) => r.id).join("|")}`}
             recipes={visible}
-            allRecipes={recipes.recipes}
             onOpen={openRecipe}
           />
         ) : (
           <CardDeck
             key={`cards-${visible.map((r) => r.id).join("|")}`}
             recipes={visible}
-            allRecipes={recipes.recipes}
             onOpen={openRecipe}
           />
         )
@@ -139,9 +133,6 @@ export default function App() {
         <RecipeReader
           key={`reader-${selected.id}`}
           recipe={selected}
-          onAnalyze={canEdit ? () => { void recipeAi.analyze(selected, true, true); } : undefined}
-          analyzing={selectedAiStatus?.state === "analyzing"}
-          analysisStatus={selectedAiStatus?.message}
           availableRecipes={canEdit ? recipes.recipes : []}
           onClose={closeRecipe}
           onEdit={canEdit ? () => setEditing(selected) : undefined}
@@ -176,7 +167,6 @@ export default function App() {
             const saved = getRecipeStore().save(input, id);
             setEditing(null);
             setSelectedId(saved.id);
-            if (!hasFreshRecipeAi(saved)) void recipeAi.analyze(saved);
           }}
         />
       )}

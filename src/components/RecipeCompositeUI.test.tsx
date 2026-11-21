@@ -4,22 +4,19 @@ import { RecipeReader } from "./RecipeReader";
 import { RecipeForm } from "./RecipeForm";
 import { starterRecipes } from "../data/recipes";
 import type { Recipe } from "../types";
-import { recipeFingerprint, type CaloriesInfo } from "../services/calorieAnalysis";
 import * as imageCompression from "../services/imageCompression";
 const share = vi.hoisted(() => vi.fn());
 vi.mock("./RecipeShareDialog", () => ({ RecipeShareDialog: (props: unknown) => { share(props); return <div>Partage prêt</div>; } }));
-vi.mock("../services/geminiService", () => ({ analyzeRecipe: vi.fn() }));
 
-function withCalories(recipe: Recipe, total: number, weight: number): Recipe {
-  const cake = recipe.isCake === true;
-  const caloriesInfo: CaloriesInfo = { type: cake ? "gateau" : "plat_sale", totalKcal: total, cookedWeightGrams: weight,
-    kcal: Math.round(cake ? total / 8 : total / weight * 100), basis: cake ? "part" : "100g", ...(cake ? { parts: 8 as const } : {}),
-    estimated: true, assumptions: ["Poids cuit estimé."], analyzedAt: "2026-11-18T12:00:00Z", model: "gemini-3.8-flash", fingerprint: recipeFingerprint(recipe) };
-  return { ...recipe, caloriesInfo };
-}
 function fixtures() {
-  const garnish = withCalories({ ...starterRecipes[1], title: "Ganache au chocolat", ingredients: ["100 g de chocolat"], steps: ["Faire fondre le chocolat."], servings: 4 }, 800, 200);
-  const base = withCalories({ ...starterRecipes[0], title: "Gâteau au yaourt", ingredients: ["200 g de farine"], steps: ["Cuire le gâteau."], servings: 2, isCake: true, panSize: 26, linkedRecipeIds: [garnish.id] }, 1600, 800);
+  const garnish: Recipe = {
+    ...starterRecipes[1], title: "Ganache au chocolat", ingredients: ["100 g de chocolat"], steps: ["Faire fondre le chocolat."],
+    servings: 4, caloriesValue: 120, caloriesUnit: "total",
+  };
+  const base: Recipe = {
+    ...starterRecipes[0], title: "Gâteau au yaourt", ingredients: ["200 g de farine"], steps: ["Cuire le gâteau."],
+    servings: 2, isCake: true, panSize: 26, linkedRecipeIds: [garnish.id], caloriesValue: 320, caloriesUnit: "per_serving",
+  };
   return { base, garnish };
 }
 beforeEach(() => share.mockClear());
@@ -32,13 +29,14 @@ describe("recettes liées dans le lecteur", () => {
     const { container } = reader(base, [base, garnish]);
     expect(screen.getAllByRole("heading", { name: "Base · Gâteau au yaourt" })).toHaveLength(2);
     expect(screen.getAllByRole("heading", { name: "Ganache au chocolat" })).toHaveLength(2);
-    expect(screen.getByText("~300 kcal / part (1/8)")).toBeInTheDocument();
+    expect(screen.getByText("320 kcal / part")).toBeInTheDocument();
+    expect(screen.queryByText("120 kcal au total")).not.toBeInTheDocument();
     expect([...container.querySelectorAll(".step-number")].map(element => element.textContent)).toEqual(["01", "02", "03"]);
     expect(screen.getByText("Assembler les préparations selon les indications de la recette de base.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Moule 20 cm" }));
     expect(screen.getByText("118,34 g de farine")).toBeInTheDocument();
     expect(screen.getByText("59,17 g de chocolat")).toBeInTheDocument();
-    expect(screen.queryByText(/kcal \/ part/)).not.toBeInTheDocument();
+    expect(screen.getByText("320 kcal / part")).toBeInTheDocument();
     expect(base.ingredients).toEqual(["200 g de farine"]);
     expect(garnish.ingredients).toEqual(["100 g de chocolat"]);
     fireEvent.click(screen.getAllByRole("checkbox")[0]);
@@ -62,22 +60,24 @@ describe("recettes liées dans le lecteur", () => {
     expect(props.recipe.steps.slice(3).every(step => step.startsWith("Conseil d’adaptation :"))).toBe(true);
     expect(props.recipe.servings).toBe(2);
     expect(props.recipe.panSize).toBe(20);
-    expect(props.recipe.caloriesInfo).toBeUndefined();
+    expect(props.recipe.caloriesValue).toBe(320);
+    expect(props.recipe.caloriesUnit).toBe("per_serving");
   });
 
-  it("ne présente pas les calories de la base comme celles d’un assemblage incomplet", () => {
+  it("signale une liaison manquante et conserve la valeur saisie sur la recette", () => {
     const { base } = fixtures();
     reader(base, [base]);
     expect(screen.getByText(/Une recette liée a été supprimée/)).toBeInTheDocument();
-    expect(screen.queryByText(/kcal \/ part/)).not.toBeInTheDocument();
+    expect(screen.getByText("320 kcal / part")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Partager" })).toBeDisabled();
   });
 
-  it("demande une nouvelle estimation si la préparation liée a changé", () => {
+  it("laisse le bloc calories absent quand seule une préparation liée a une valeur saisie", () => {
     const { base, garnish } = fixtures();
-    reader(base, [base, { ...garnish, ingredients: ["150 g de chocolat"] }]);
-    expect(screen.getByText(/Analyse à calculer ou à actualiser pour « Ganache au chocolat »/)).toBeInTheDocument();
-    expect(screen.queryByText(/kcal \/ part/)).not.toBeInTheDocument();
+    const recipe = { ...base, caloriesValue: null, caloriesUnit: null };
+    reader(recipe, [recipe, garnish]);
+    expect(screen.queryByRole("region", { name: "Calories" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/kcal/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Partager" })).toBeEnabled();
   });
 
@@ -88,7 +88,8 @@ describe("recettes liées dans le lecteur", () => {
     expect(screen.getByRole("button", { name: "Moule 20 cm" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Moule 28 cm" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "4 personnes" })).not.toBeInTheDocument();
-  });});
+  });
+});
 
 describe("fusion depuis la création", () => {
   it("sélectionne plusieurs recettes puis enregistre une copie indépendante et modifiable", () => {
@@ -121,6 +122,8 @@ describe("fusion depuis la création", () => {
     expect(id).toBeUndefined();
     expect(input.ingredients).toContain("— Ganache au chocolat —");
     expect(input.steps.at(-1)).toMatch(/^Assemblage final/);
+    expect(input.caloriesValue ?? null).toBeNull();
+    expect(input.caloriesUnit ?? null).toBeNull();
     expect(base).toEqual(baseBefore);
     expect(garnish).toEqual(garnishBefore);
   });

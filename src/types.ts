@@ -1,5 +1,5 @@
-import type { CaloriesInfo } from "./services/calorieAnalysis";
 import type { RecipeAiData } from "./services/recipeAiTypes";
+import type { ManualCaloriesFields } from "./services/manualCalories";
 export type Category = "sale" | "sucre";
 export type LayoutMode = "cards" | "book";
 export type PanSize = 20 | 26 | 28;
@@ -15,7 +15,7 @@ export function cakeFields(input: { isCake?: boolean; panSize?: unknown }) {
     panSize: isCake && isPanSize(input.panSize) ? input.panSize : undefined,
   };
 }
-export interface Recipe {
+export interface Recipe extends ManualCaloriesFields {
   id: string;
   title: string;
   category: Category;
@@ -27,10 +27,6 @@ export interface Recipe {
   isCake?: boolean;
   panSize?: PanSize;
   servings?: number;
-  caloriesInfo?: CaloriesInfo;
-  caloriesValue?: number;
-  caloriesUnit?: "kcal / part (1/8)" | "kcal / 100g";
-  caloriesNote?: string;
   aiScalingData?: RecipeAiData;
   linkedRecipeIds?: string[];
 }
@@ -44,10 +40,8 @@ export type RecipeInput = Pick<
   | "isCake"
   | "panSize"
   | "servings"
-  | "caloriesInfo"
   | "caloriesValue"
   | "caloriesUnit"
-  | "caloriesNote"
   | "aiScalingData"
   | "linkedRecipeIds"
 >;

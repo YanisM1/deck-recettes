@@ -121,7 +121,7 @@ describe("Affiche PNG de recette", () => {
         themeElement,
         ingredients: ["6 pommes", "400 g de farine"],
         servings: 8,
-        calories: { value: 250.5, unit: "100g" },
+        calories: { value: 250.5, unit: "per_100g" },
       });
 
       expect(file.name).toBe("deckchef-gateau-aux-pommes.png");
@@ -135,7 +135,7 @@ describe("Affiche PNG de recette", () => {
       const text = rendered.map(({ value }) => value);
       expect(text).toEqual(expect.arrayContaining([
         "Gâteau aux pommes", "Sucré", "Moule 20 cm", "8 personnes",
-        "250,5 kcal/100 g", "Ingrédients", "6 pommes", "400 g de farine",
+        "250,5 kcal / 100 g", "Ingrédients", "6 pommes", "400 g de farine",
         "Préparation", "1", recipe.steps[0], "2", recipe.steps[1],
         "3", "DeckChef",
       ]));

@@ -1,9 +1,8 @@
 import type { Recipe, RecipeInput } from "../types";
 import { cakeFields } from "../types";
 import { starterRecipes } from "../data/recipes";
-import { recipeFingerprint } from "./calorieAnalysis";
-import { isRecipeAiData, type RecipeAiData } from "./recipeAiTypes";
-import { withRecipeAiMetadata } from "./recipeAiMetadata";
+import { readRecipeAdaptations } from "./recipeAiTypes";
+import { readManualCalories, validateManualCalories } from "./manualCalories";
 import { normalizeLinkedRecipeIds, validateRecipeLinks } from "./compositeRecipes";
 export type Operation =
   | { type: "save"; recipe: Recipe }
@@ -29,6 +28,27 @@ export interface RecipeSnapshot {
   error: string | null;
 }
 type Cache = { recipes: Recipe[]; queue: Operation[] };
+
+function readCachedRecipe(recipe: Recipe): Recipe {
+  const {
+    caloriesInfo: _oldAnalysis, caloriesNote: _oldNote,
+    caloriesValue, caloriesUnit, aiScalingData, ...fields
+  } = recipe as Recipe & { caloriesInfo?: unknown; caloriesNote?: unknown };
+  const calories = readManualCalories(caloriesValue, caloriesUnit);
+  const adaptations = readRecipeAdaptations(aiScalingData, fields);
+  return {
+    ...fields,
+    ...(calories ?? (caloriesValue === null && caloriesUnit === null ? { caloriesValue, caloriesUnit } : {})),
+    ...(adaptations ? { aiScalingData: adaptations } : {}),
+  };
+}
+
+function readCachedOperation(operation: Operation): Operation {
+  return operation.type === "save"
+    ? { ...operation, recipe: readCachedRecipe(operation.recipe) }
+    : operation;
+}
+
 export function isRecipe(value: unknown): value is Recipe {
   if (!value || typeof value !== "object") return false;
   const r = value as Recipe;
@@ -99,8 +119,8 @@ export class RecipeStore {
         Array.isArray(cache.queue) &&
         cache.queue.every(isOperation)
       ) {
-        recipes = cache.recipes.map(withRecipeAiMetadata);
-        this.queue = cache.queue.map(op => op.type === "save" ? { ...op, recipe: withRecipeAiMetadata(op.recipe) } : op);
+        recipes = cache.recipes.map(readCachedRecipe);
+        this.queue = cache.queue.map(readCachedOperation);
       }
     } catch {
       /* Une sauvegarde illisible ne bloque pas l'application. */
@@ -154,8 +174,8 @@ export class RecipeStore {
         Array.isArray(cache.queue) &&
         cache.queue.every(isOperation)
       ) {
-        this.queue = cache.queue.map(op => op.type === "save" ? { ...op, recipe: withRecipeAiMetadata(op.recipe) } : op);
-        this.update({ recipes: cache.recipes.map(withRecipeAiMetadata), pending: this.queue.length });
+        this.queue = cache.queue.map(readCachedOperation);
+        this.update({ recipes: cache.recipes.map(readCachedRecipe), pending: this.queue.length });
         this.refresh();
       }
     } catch {
@@ -201,10 +221,15 @@ export class RecipeStore {
       : undefined;
     if (id && !existing)
       throw new Error("Cette recette n’existe plus. Revenez au carnet.");
+    const calories = input.caloriesValue === undefined && input.caloriesUnit === undefined
+      ? readManualCalories(existing?.caloriesValue, existing?.caloriesUnit)
+      : validateManualCalories(input.caloriesValue, input.caloriesUnit);
     const now = new Date().toISOString(),
-      recipe: Recipe = {
+      recipe = readCachedRecipe({
         ...input,
+        ...calories,
         ...cakeFields(input),
+        aiScalingData: input.aiScalingData ?? existing?.aiScalingData,
         servings: input.servings ?? 2,
         title,
         ingredients,
@@ -212,8 +237,7 @@ export class RecipeStore {
         id: id || crypto.randomUUID(),
         created_at: existing?.created_at || now,
         updated_at: now,
-      };
-    Object.assign(recipe, withRecipeAiMetadata(recipe));
+      });
     recipe.linkedRecipeIds = normalizeLinkedRecipeIds(input.linkedRecipeIds, recipe.id);
     validateRecipeLinks(recipe.id, recipe.linkedRecipeIds, this.state.recipes);
     const operation: Operation = { type: "save", recipe };
@@ -223,18 +247,6 @@ export class RecipeStore {
     ]);
     void this.sync();
     return recipe;
-  }
-  enrichAi(id: string, expectedFingerprint: string, data: RecipeAiData): boolean {
-    const current = this.state.recipes.find(recipe => recipe.id === id);
-    if (!current || recipeFingerprint(current) !== expectedFingerprint || !isRecipeAiData(data, current)) return false;
-    // Enrichment changes metadata only. Keep the latest photo/links and do not
-    // revalidate an existing missing link or resurrect a deleted recipe.
-    const recipe = withRecipeAiMetadata({ ...current, aiScalingData: data,
-      caloriesInfo: data.caloriesInfo ?? current.caloriesInfo, updated_at: new Date().toISOString() });
-    const operation: Operation = { type: "save", recipe };
-    this.persist(applyOperations(this.state.recipes, [operation]), [...this.queue, operation]);
-    void this.sync();
-    return true;
   }
   remove(id: string) {
     const operation: Operation = { type: "delete", id };

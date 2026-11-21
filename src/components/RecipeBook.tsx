@@ -5,11 +5,8 @@ import { RecipeImage } from "./RecipeImage";
 import { PanBadge } from "./PanBadge";
 import { CaloriesBadge } from "./CaloriesBadge";
 import { MOTION_TRANSITION, useDirectNavigation } from "../hooks/useDirectNavigation";
-import { composeRecipes } from "../services/compositeRecipes";
 
-const BookPage = memo(function BookPage({ recipe, allRecipes }: { recipe: Recipe; allRecipes: Recipe[] }) {
-  const composite = recipe.linkedRecipeIds?.length ? composeRecipes(recipe, allRecipes) : undefined;
-  const calorieRecipe = composite ? { ...recipe, ingredients: composite.ingredients, steps: composite.steps, caloriesInfo: composite.caloriesInfo } : recipe;
+const BookPage = memo(function BookPage({ recipe }: { recipe: Recipe }) {
   return (
     <div className="book-page-content">
       <p className="book-running-title">LES BELLES RECETTES DE LA MAISON</p>
@@ -22,7 +19,7 @@ const BookPage = memo(function BookPage({ recipe, allRecipes }: { recipe: Recipe
           {recipe.category === "sale" ? "Du côté salé" : "Pour la douceur"}
         </p>
         <PanBadge recipe={recipe} className="book-pan-badge" />
-        <CaloriesBadge recipe={calorieRecipe} showMissing className="book-calories-badge" />
+        <CaloriesBadge recipe={recipe} className="book-calories-badge" />
       </div>
       <div className="book-flourish" aria-hidden="true"><span>✳</span></div>
       <div className="book-ingredient-preview">
@@ -54,13 +51,12 @@ function BookEnd({ active, reset }: { active: boolean; reset: () => void }) {
   );
 }
 
-function RecipeLeaf({ recipe, active, leafRef, offset, onOpen, allRecipes }: {
+function RecipeLeaf({ recipe, active, leafRef, offset, onOpen }: {
   recipe: Recipe;
   active: boolean;
   leafRef: Ref<HTMLDivElement>;
   offset: number;
   onOpen: () => void;
-  allRecipes: Recipe[];
 }) {
   return (
     <div ref={leafRef} className="book-turn-leaf"
@@ -70,7 +66,7 @@ function RecipeLeaf({ recipe, active, leafRef, offset, onOpen, allRecipes }: {
       <div className="book-face book-face-front book-paper">
         <button className="book-open" aria-label={`Lire ${recipe.title}`}
           tabIndex={active ? 0 : -1} onClick={onOpen}>
-          <BookPage recipe={recipe} allRecipes={allRecipes} />
+          <BookPage recipe={recipe} />
         </button>
       </div>
       <div className="book-face book-face-back book-paper" aria-hidden="true">
@@ -80,9 +76,8 @@ function RecipeLeaf({ recipe, active, leafRef, offset, onOpen, allRecipes }: {
   );
 }
 
-export const RecipeBook = memo(function RecipeBook({ recipes, onOpen, allRecipes = recipes }: {
+export const RecipeBook = memo(function RecipeBook({ recipes, onOpen }: {
   recipes: Recipe[];
-  allRecipes?: Recipe[];
   onOpen: (recipe: Recipe) => void;
 }) {
   const layers = useRef(new Map<number, HTMLDivElement>());
@@ -118,7 +113,7 @@ export const RecipeBook = memo(function RecipeBook({ recipes, onOpen, allRecipes
         {index < recipes.length - 1 && <div className="book-page-stack" aria-hidden="true" />}
         {offsets.map(offset => {
           const itemIndex = index + offset, recipe = recipes[itemIndex], active = offset === 0;
-          return recipe ? <RecipeLeaf key={recipe.id} recipe={recipe} active={active} offset={offset} allRecipes={allRecipes}
+          return recipe ? <RecipeLeaf key={recipe.id} recipe={recipe} active={active} offset={offset}
             leafRef={element => { if (element) layers.current.set(itemIndex, element); else layers.current.delete(itemIndex); }}
             onOpen={() => { if (active && !isBusy()) onOpen(recipe); }} /> :
             <div key="book-end" className="book-end-layer" data-book-layer={active ? "current" : "next"}

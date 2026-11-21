@@ -1,7 +1,7 @@
 import { starterRecipes } from "../data/recipes";
 import { isPanSize, type Recipe } from "../types";
 import { isRecipe } from "./recipeStore";
-import { hasFreshCalories } from "./calorieAnalysis";
+import { readManualCalories } from "./manualCalories";
 
 export const RECIPE_SHARE_PRODUCTION_ORIGIN = "https://deck-recettes.vercel.app";
 const RECIPE_ID = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
@@ -84,7 +84,7 @@ export async function createRecipeShareToken(recipeId: string, collectionKey: st
 }
 
 function safeSnapshotPhoto(value: string) {
-  if (STARTER_PHOTOS.has(value)) return value;
+  if (STARTER_PHOTOS.has(value) || /^\/recipes\/[a-z0-9-]+\.webp$/.test(value)) return value;
   if (!value.startsWith("https://")) return "";
   try {
     const url = new URL(value);
@@ -107,11 +107,11 @@ function snapshotRecipe(recipe: Recipe): Recipe {
     image_url: safeSnapshotPhoto(recipe.image_url),
     created_at: recipe.created_at,
     updated_at: recipe.updated_at,
-    isCake: panSize ? true : recipe.isCake === true ? true : undefined,
+    isCake: panSize ? true : recipe.isCake,
     panSize,
     ...(Number.isSafeInteger(recipe.servings) && recipe.servings! >= 1 && recipe.servings! <= 999 ? { servings: recipe.servings } : {}),
   };
-  if (hasFreshCalories({ ...portable, caloriesInfo: recipe.caloriesInfo })) portable.caloriesInfo = recipe.caloriesInfo;
+  Object.assign(portable, readManualCalories(recipe.caloriesValue, recipe.caloriesUnit));
   return portable;
 }
 

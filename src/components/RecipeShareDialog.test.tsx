@@ -83,7 +83,7 @@ it("prévisualise le PNG Livre avec les quantités ajustées, puis partage et t�
   fireEvent.change(within(modal).getByLabelText("Portions d’origine"), { target: { value: "4" } });
   fireEvent.change(within(modal).getByLabelText("Personnes"), { target: { value: "8" } });
   fireEvent.change(within(modal).getByLabelText("Calories (kcal)"), { target: { value: "350" } });
-  fireEvent.change(within(modal).getByLabelText("Unité"), { target: { value: "100g" } });
+  fireEvent.change(within(modal).getByLabelText("Unité"), { target: { value: "per_100g" } });
 
   expect(await within(modal).findByAltText(`Aperçu de la recette en photo · ${recipe.title}`))
     .toHaveAttribute("src", "blob:deckchef-preview");
@@ -93,7 +93,7 @@ it("prévisualise le PNG Livre avec les quantités ajustées, puis partage et t�
     themeElement: reader,
     servings: 8,
     ingredients: expect.arrayContaining(["400 g de farine", "4 œufs"]),
-    calories: { value: 350, unit: "100g" },
+    calories: { value: 350, unit: "per_100g" },
   });
   fireEvent.click(within(modal).getByRole("button", { name: "Partager l’image" }));
   expect(shareRecipeImage).toHaveBeenCalledWith(file, recipe.title);

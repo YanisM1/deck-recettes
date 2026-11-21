@@ -474,6 +474,65 @@
 .editable-lines {
   margin-top: 20px;
 }
+.manual-calories-fields {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 15px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.manual-calories-fields legend {
+  padding: 0 5px;
+  font: 18px Georgia, serif;
+}
+.manual-calories-fields .section-caption {
+  margin: 0;
+}
+.manual-calories-fields > label {
+  font-size: 11px;
+  color: var(--muted);
+}
+.manual-calories-fields > input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+}
+.manual-calories-units {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.manual-calories-units button {
+  min-height: 44px;
+  padding: 7px 4px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text);
+  font-size: 10px;
+}
+.manual-calories-units button[aria-pressed="true"] {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary);
+  color: var(--on-primary);
+}
+.manual-calories-units button:nth-child(2)[aria-pressed="true"] {
+  border-color: var(--accent-secondary);
+  background: var(--accent-secondary);
+  color: var(--on-secondary);
+}
+.manual-calories-units button:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
 .editable-line {
   display: flex;
   align-items: flex-start;

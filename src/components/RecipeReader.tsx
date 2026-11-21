@@ -6,7 +6,7 @@ import { PanBadge } from "./PanBadge";
 import { CaloriesBadge } from "./CaloriesBadge";
 import { Modal } from "./Modal";
 import { RecipeShareDialog } from "./RecipeShareDialog";
-import { hasFreshCalories, recipeFingerprint } from "../services/calorieAnalysis";
+import { readManualCalories } from "../services/manualCalories";
 import { createRecipeDisplayCache } from "../services/recipeDisplay";
 const NO_RECIPES: Recipe[] = [];
 export function RecipeReader({
@@ -19,9 +19,6 @@ export function RecipeReader({
   layout = "cards",
   themeId,
   availableRecipes = NO_RECIPES,
-  onAnalyze,
-  analyzing = false,
-  analysisStatus = "",
 }: {
   recipe: Recipe;
   onClose: () => void;
@@ -32,9 +29,6 @@ export function RecipeReader({
   layout?: LayoutMode;
   themeId?: string;
   availableRecipes?: Recipe[];
-  onAnalyze?: () => void;
-  analyzing?: boolean;
-  analysisStatus?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null),
     [checked, setChecked] = useState<Set<number>>(new Set()),
@@ -47,13 +41,11 @@ export function RecipeReader({
   const display = displayCache.values[String(selected)] ?? displayCache.values[String(displayCache.initial)];
   const displayedRecipe = display.recipe;
   const composed = display.composed;
-  const calories = hasFreshCalories(displayedRecipe) ? displayedRecipe.caloriesInfo : undefined;
+  const calories = readManualCalories(recipe.caloriesValue, recipe.caloriesUnit);
   const sharedRecipe = useMemo(() => {
     if (!display.adapted) return recipe;
-    const copy: Recipe = { ...displayedRecipe,
+    return { ...displayedRecipe,
       steps: [...displayedRecipe.steps, ...display.cookingNotes.map(note => `Conseil d’adaptation : ${note}`)] };
-    if (hasFreshCalories(displayedRecipe)) copy.caloriesInfo = { ...displayedRecipe.caloriesInfo!, fingerprint: recipeFingerprint(copy) };
-    return copy;
   }, [display, displayedRecipe, recipe]);
   const sweet = displayCache.kind === "sucre";
   const hasLinks = !!recipe.linkedRecipeIds?.length;
@@ -115,18 +107,10 @@ export function RecipeReader({
           <PanBadge recipe={displayedRecipe} className="reader-pan-badge" />
         </p>
         <h1>{recipe.title}</h1>
-        <section className="reader-nutrition" aria-label="Calories et adaptation">
-          <p className="nutrition-eyebrow">Calories estimées</p>
-          {calories ? <>
-            <CaloriesBadge recipe={displayedRecipe} className="reader-calories-badge" />
-            <p>{calories.basis === "part" ? "Par part (gâteau coupé en 8 parts égales)." : "Pour 100 g du plat cuisiné final."}</p>
-            <p className="nutrition-origin-note">{calories.model.startsWith("local-") ? "Estimation locale indicative, basée sur des valeurs moyennes des ingrédients reconnus." : "Calcul IA estimatif."}</p>
-          </> : <p className="nutrition-missing">Calories à calculer pour cette préparation.</p>}
-          {onAnalyze && <button type="button" className="secondary-button" disabled={analyzing}
-            onClick={onAnalyze}>{analyzing ? "⏳ Calcul des calories…" : "✨ Recalculer les calories"}</button>}
-          {analysisStatus && <p role="status">{analysisStatus}</p>}
-          {display.local && <p className="nutrition-local">Adaptation et estimation locale indicatives. Les valeurs sont basées sur les ingrédients reconnus.</p>}
-        </section>
+        {calories && <section className="reader-nutrition" aria-label="Calories">
+          <CaloriesBadge recipe={calories} className="reader-calories-badge" />
+          {calories.caloriesUnit === "total" && selected !== displayCache.initial && <p>Valeur pour la recette d’origine.</p>}
+        </section>}
         <div className="reader-ornament" aria-hidden="true">
           ✳
         </div>
@@ -140,11 +124,11 @@ export function RecipeReader({
         <fieldset className="reader-portions" aria-label={sweet ? "Choisir la taille du moule" : "Choisir le nombre de personnes"}>
           <legend>{sweet ? "Le moule souhaité" : "À table pour…"}</legend>
           <div className={`portion-shortcuts ${sweet ? "pan-shortcuts" : "serving-shortcuts"}`}>
-            {(sweet ? PAN_SIZES : [1, 2, 3, 4, 5, 6, 7, 8]).map(value => <button type="button" key={value}
+            {(sweet ? PAN_SIZES : Object.keys(displayCache.values).map(Number)).map(value => <button type="button" key={value}
               aria-label={sweet ? `Moule ${value} cm` : `${value} ${value === 1 ? "personne" : "personnes"}`}
               aria-pressed={selected === value} onClick={() => setSelection(value)}>{sweet ? `${value} cm` : `${value}p`}</button>)}
           </div>
-          <p>{sweet ? `Base : moule ${recipe.panSize ?? 26} cm. Chaque gâteau est divisé en 8 parts.` : `Base : ${recipe.servings ?? 2} personnes. Ajustez les assaisonnements à votre goût.`}</p>
+          <p>{sweet ? `Base : moule ${recipe.panSize ?? 26} cm.` : `Base : ${recipe.servings ?? 2} personnes. Ajustez les assaisonnements à votre goût.`}</p>
         </fieldset>
         {display.cookingNotes.length > 0 && <div className="recipe-cooking-notes">
           <p className="cooking-notes-title">{sweet ? "Proportions et cuisson" : "Conseils d’adaptation"}</p>
@@ -153,7 +137,6 @@ export function RecipeReader({
         {hasLinks && <div className="composite-notes">
           <p>Chaque préparation est incluse avec toutes ses quantités ; les portions ajustent l’ensemble.</p>
           {composed.warnings.map((warning, index) => <p key={index} role="status">{warning.message}</p>)}
-          {composed.caloriesUnavailableReason && <p role="status">{composed.caloriesUnavailableReason}</p>}
           {!canShare && <p>Corrigez les liaisons avant de partager la recette complète.</p>}
         </div>}
         {sections.map(section => <section key={section.recipeId} className="composite-ingredient-section">
