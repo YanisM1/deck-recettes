@@ -52,7 +52,7 @@ Le store sauvegarde d’abord localement et conserve une file d’opérations en
 
 Les migrations additives `20261118105817_deckchef_calorie_analysis.sql` et `20261118110837_deckchef_composite_recipes.sql` ajoutent `servings`, `calories_info` et `linked_recipe_ids`, puis adaptent l’initialisation DeckChef. Elles ont été appliquées après autorisation explicite, sans modifier les règles RLS ni les tables des autres applications. Le client conserve les métadonnées en attente s’il rencontre encore un ancien schéma.
 
-La migration `20261119101003_deckchef_recipe_ai_cache.sql` a historiquement ajouté des champs de métadonnées. Les anciennes données restent dans la base, mais l’application n’effectue plus de calcul calorique et n’affiche aucune analyse ancienne comme saisie manuelle. La migration `20261121120000_deckchef_manual_calories.sql` met à jour la contrainte DeckChef pour accepter les trois unités manuelles ; son application distante doit être confirmée séparément.
+La migration `20261119101003_deckchef_recipe_ai_cache.sql` a ajouté les champs de métadonnées. Les anciennes données restent dans la base et l’application affiche uniquement les valeurs saisies manuellement. La migration `20261121120000_deckchef_manual_calories.sql`, appliquée en production via l’éditeur SQL Supabase, accepte les trois unités manuelles. L’enregistrement de l’unité `total` a été vérifié à la relecture de la blanquette.
 
 Quatre exemples apparaissent à la première ouverture. Le Reset Total nécessite deux confirmations et vide uniquement le carnet courant. Un carnet vidé reste vide, même sur un nouvel appareil.
 

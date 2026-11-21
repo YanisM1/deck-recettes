@@ -1,5 +1,12 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-21 — Migration des calories et import du carnet confirmés
+
+- L’utilisateur a appliqué la migration `20261121120000_deckchef_manual_calories.sql` dans l’éditeur SQL du projet DeckChef. Le carnet cible est resté protégé par son code privé. La migration accepte les trois unités manuelles et les chaînes historiques.
+- Le script a inséré Suzy, Reine de Saba, les financiers à la pistache et la blanquette dans le carnet existant. Il a relu les quatre lignes, leurs ingrédients et leurs étapes, puis envoyé une invalidation Realtime. La blanquette a été relue avec 2 portions, 975 kcal et l’unité `total`.
+- La vérification séparée en lecture seule a retrouvé les quatre recettes sans doublon. L’import n’a modifié aucune recette existante.
+- Checkpoint de publication réussi sans `.env.local` : 239 tests Vitest, 5 tests d’import et build. Les quatre photos sont présentes et le code privé du carnet est absent du bundle.
+
 ## 2026-11-21 — Blanquette et vérification du carnet cible
 
 - Ajout de la blanquette de veau sans farine au lot existant. Huit ingrédients, six étapes et l’astuce texture. Base de 2 portions et valeur manuelle de 975 kcal au total. Photo WebP de 960 × 1200 px.

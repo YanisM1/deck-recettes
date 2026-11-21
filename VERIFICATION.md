@@ -1,13 +1,13 @@
 # Vérification DeckChef — 21 novembre 2026
 
-## Calories saisies manuellement et recettes pistache
+## Calories saisies manuellement et import de quatre recettes
 
 - L’interface ne déclenche plus d’analyse automatique de calories. Une valeur facultative entière peut être enregistrée comme « Par part », « Pour 100 g » ou « Au total », pour les recettes salées et sucrées. Le badge est absent lorsque la valeur n’est pas renseignée.
 - Les tests couvrent le formulaire de création et de modification, les trois unités pour les deux catégories, la suppression d’une valeur, le rejet d’une valeur fractionnaire, l’affichage dans le lecteur, les adaptations de quantités sans recalcul calorique, le partage et la persistance locale/Supabase.
 - Les anciennes métadonnées d’analyse ne sont pas présentées comme des saisies manuelles. Les caches de variantes servent seulement à l’adaptation des quantités ; les liens, portions, moules et protections de carnet restent gérés séparément.
-- Trois photos WebP locales ont été générées et optimisées pour les nouvelles recettes. Le JSON d’insertion conserve les listes complètes fournies par l’utilisateur ; tests d’idempotence, de contenu déjà divergent et de refus sans code de carnet exécutés contre Supabase simulé.
-- La migration `20261121120000_deckchef_manual_calories.sql` modifie seulement la contrainte de validation DeckChef. Son application distante et l’insertion dans le carnet de production restent en attente : la CLI Supabase a précédemment renvoyé HTTP 403, et le code privé du carnet cible n’est pas configuré dans `.env.local`. Aucune écriture distante n’a été faite pendant cette vérification.
-- Le contrôle visuel Safari/iPhone 16 Pro n’a pas été réalisé ; les tests automatismes et le build sont exécutés séparément, sans secrets.
+- Quatre photos WebP locales ont été générées et optimisées pour les nouvelles recettes. Les tests d’idempotence, de contenu divergent et de refus sans code de carnet utilisent un Supabase simulé.
+- La migration `20261121120000_deckchef_manual_calories.sql` a été appliquée dans l’éditeur SQL Supabase. L’import puis une relecture distincte ont confirmé les quatre recettes dans le carnet cible, dont les 2 portions et 975 kcal au total de la blanquette.
+- 239 tests Vitest, 5 tests du script et le build sont passés sans secrets locaux. Le contrôle visuel Safari sur un iPhone 16 Pro n’a pas été réalisé.
 
 ## Reconstruction du swipe au doigt
 
