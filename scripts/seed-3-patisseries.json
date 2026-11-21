@@ -95,5 +95,35 @@
       "Refroidissement et conservation : laisse reposer 5 à 10 minutes dans le moule hors du four, puis démoule aussitôt sur une grille pour éviter l'humidité. Une fois totalement froids, conserve-les à température ambiante dans une boîte en métal (ou une boîte hermétique avec une feuille d'essuie-tout au fond), jamais au frigo. (Optionnel avant de servir le lendemain : 3 minutes au four à 160 °C puis 5 minutes de refroidissement pour retrouver des bords légèrement croustillants.)"
     ],
     "image_url": "/recipes/financiers-pistache.webp"
+  },
+  {
+    "id": "c9201369-142e-49f9-b737-6a081b82134e",
+    "title": "Blanquette de veau sans farine",
+    "category": "sale",
+    "is_cake": false,
+    "pan_size": null,
+    "servings": 2,
+    "calories_value": 975,
+    "calories_unit": "total",
+    "ingredients": [
+      "500 g de sauté de veau à mijoter (épaule ou collier), coupé en gros cubes d'environ 4 cm",
+      "100 g de carottes (1 carotte moyenne)",
+      "125 g d'oignons jaunes (1 gros oignon)",
+      "10 g de beurre (~75 kcal)",
+      "1 cube de bouillon de volaille ou de légumes (~40 kcal), dissous dans 600 ml d'eau chaude",
+      "Crème fraîche (~100 kcal) : comptez 35 g (2 c. à s. rases) de crème épaisse entière à 30 % MG, ou 60 g (3 à 4 c. à s.) de crème légère à 15 % MG",
+      "1 jaune d'œuf (à température ambiante)",
+      "Assaisonnements (~0 kcal) : sel, poivre, 1 bouquet garni (thym, laurier), 1 clou de girofle (facultatif), quelques gouttes de jus de citron et une pincée de noix de muscade"
+    ],
+    "steps": [
+      "Blanchir la viande et tailler les légumes (10 min) — Étape clé pour une sauce bien blanche. Placez les cubes de veau dans une cocotte, couvrez-les largement d'eau froide et portez à ébullition. Dès que l'eau bout et qu'une écume grise se forme en surface, laissez frémir 2 à 3 minutes, puis égouttez la viande dans une passoire et rincez-la sous l'eau tiède. Essuyez la cocotte. Pendant ce temps, épluchez les carottes et coupez-les en rondelles épaisses. Pelez les oignons et émincez-les grossièrement (ou coupez-les en quartiers si vous piquez un clou de girofle dans l'un d'eux).",
+      "Faire suer les légumes et le veau sans colorer (5 min à feu doux). Faites fondre les 10 g de beurre dans la cocotte à feu doux. Ajoutez les oignons et les carottes, puis faites-les suer 3 minutes en remuant : ils ne doivent surtout pas dorer. Ajoutez ensuite les morceaux de veau blanchis et mélangez 2 minutes pour bien les enrober.",
+      "Mijoter longuement à couvert (1 h 15 à 1 h 30 à petits frémissements). Versez les 600 ml de bouillon chaud (le liquide doit tout juste affleurer la viande ; ajoutez un filet d'eau si besoin). Glissez le bouquet garni, poivrez, puis salez très légèrement (le bouillon l'est déjà). Couvrez et laissez mijoter à feu très doux pendant 1 h 15 à 1 h 30, jusqu'à ce que la viande s'effiloche facilement à la pointe d'un couteau.",
+      "Réduire le bouillon pour épaissir la sauce (10 min à feu vif) — Indispensable sans farine. La réduction concentre le collagène naturel du veau avant la liaison à la crème et au jaune d'œuf. À l'aide d'une écumoire, retirez la viande et les carottes dans un plat chaud (couvrez d'une assiette ou de papier aluminium pour garder au chaud) et retirez le bouquet garni. Faites bouillir le bouillon restant à découvert et à feu vif pendant 8 à 10 minutes, jusqu'à ce qu'il réduise environ de moitié (il doit rester l'équivalent d'un grand verre, soit 200 à 250 ml de liquide bien concentré).",
+      "Réaliser la liaison crème et jaune d'œuf (hors du feu) — Ne jamais faire bouillir après cette étape. Dans un bol, fouettez ensemble le jaune d'œuf et la crème fraîche. Prélevez une petite louche de bouillon chaud et versez-la lentement dans le bol tout en fouettant : cela tempère l'œuf pour éviter qu'il ne coagule. Coupez le feu sous la cocotte, puis versez le contenu du bol dans le bouillon réduit en fouettant énergiquement. Remettez sur feu très doux pendant 1 à 2 minutes sans cesser de remuer, juste le temps que la sauce nappe le dos d'une cuillère. Stoppez immédiatement avant le moindre frémissement, sinon le jaune d'œuf va brouiller.",
+      "Réunir et finaliser (juste avant de servir). Ajoutez quelques gouttes de jus de citron (cela réveille la sauce) et une pincée de noix de muscade. Rectifiez l'assaisonnement en sel et en poivre. Remettez le veau et les carottes dans la cocotte, mélangez délicatement pour bien enrober la viande et servez aussitôt.",
+      "Astuce texture : si vous préférez une sauce vraiment épaisse façon bistrot, vous pouvez délayer 1 cuillère à soupe rase de Maïzena (ou de farine, soit ~35 kcal en plus pour tout le plat) dans 2 cuillères à soupe d'eau froide et l'incorporer pendant l'étape 4, avant la liaison au jaune d'œuf."
+    ],
+    "image_url": "/recipes/blanquette-de-veau.webp"
   }
 ]

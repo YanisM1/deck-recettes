@@ -1,5 +1,13 @@
 # Journal DeckChef (antichronologique)
 
+## 2026-11-21 — Blanquette et vérification du carnet cible
+
+- Ajout de la blanquette de veau sans farine au lot existant. Huit ingrédients, six étapes et l’astuce texture. Base de 2 portions et valeur manuelle de 975 kcal au total. Photo WebP de 960 × 1200 px.
+- Le mode `--preflight` vérifie le carnet privé et les titres avant toute écriture. Le lot de quatre recettes utilise des identifiants stables et relit les quantités, le contenu et les calories après insertion.
+- Supabase a confirmé le carnet cible et l’absence des quatre titres. Le lot a été refusé par la contrainte `deckchef_calories_display_valid` sur l’unité `total`. Une nouvelle lecture confirme qu’aucune des quatre lignes n’a été créée.
+- La session CLI Supabase n’a pas les droits sur le projet DeckChef (HTTP 403). Le code du carnet donne accès aux recettes mais ne permet pas d’appliquer la migration. Le push et le déploiement attendent la migration et l’import vérifié.
+- Vérification sans `.env.local` et sans fichier de clé Gemini : 239 tests Vitest, 5 tests du script et build réussis. Les quatre photos sont présentes dans le build.
+
 ## 2026-11-21 — Calories manuelles et ajout de trois recettes
 
 - Retrait des routes, services et interfaces qui calculaient ou estimaient les calories. Les adaptations locales de quantités sont conservées ; les anciennes calories IA restent dans la base, mais ne sont jamais interprétées comme une saisie manuelle. Les données de moule, de portions, de carnet et les règles RLS sont conservées.

@@ -4,9 +4,10 @@ import { pathToFileURL } from "node:url";
 import { parseEnv } from "node:util";
 
 const recipes = JSON.parse(await readFile(new URL("./seed-3-patisseries.json", import.meta.url), "utf8"));
+const optionalRecipeFields = ["servings", "calories_value", "calories_unit"];
 const titles = recipes.map(({ title }) => JSON.stringify(title)).join(",");
 const recipeQuery = {
-  select: "id,title,category,is_cake,pan_size,ingredients,steps,image_url",
+  select: ["id", "title", "category", "is_cake", "pan_size", "ingredients", "steps", "image_url", ...optionalRecipeFields].join(","),
   title: `in.(${titles})`,
 };
 
@@ -55,11 +56,12 @@ function verifyContent(row, expected) {
     row.category === expected.category && row.is_cake === expected.is_cake &&
     row.pan_size === expected.pan_size &&
     JSON.stringify(row.ingredients) === JSON.stringify(expected.ingredients) &&
-    JSON.stringify(row.steps) === JSON.stringify(expected.steps);
+    JSON.stringify(row.steps) === JSON.stringify(expected.steps) &&
+    optionalRecipeFields.every((field) => !Object.hasOwn(expected, field) || row[field] === expected[field]);
   if (!exactContent) throw new Error(`Le titre « ${expected.title} » existe avec un contenu différent. La recette existante est préservée.`);
 }
 
-export async function seedPastries(config, { verifyOnly = false, fetcher = fetch } = {}) {
+export async function seedPastries(config, { verifyOnly = false, preflight = false, fetcher = fetch } = {}) {
   const publicHeaders = verifyConfig(config);
   const { origin, collectionKey } = config;
 
@@ -78,7 +80,14 @@ export async function seedPastries(config, { verifyOnly = false, fetcher = fetch
     } catch {
       throw new Error(`Connexion Supabase impossible (${method} ${path}).`);
     }
-    if (!response.ok) throw new Error(`Supabase a renvoyé HTTP ${response.status} (${method} ${path}).`);
+    if (!response.ok) {
+      const details = await response.json().catch(() => null);
+      if (details?.code === "23514" && details.message?.includes("deckchef_calories_display_valid")) {
+        throw new Error("Supabase refuse les unités manuelles. Appliquez d’abord la migration DeckChef des calories.");
+      }
+      const code = typeof details?.code === "string" && /^[A-Z0-9]+$/.test(details.code) ? ` ${details.code}` : "";
+      throw new Error(`Supabase a renvoyé HTTP ${response.status}${code} (${method} ${path}).`);
+    }
     return response;
   }
 
@@ -109,26 +118,40 @@ export async function seedPastries(config, { verifyOnly = false, fetcher = fetch
 
   const before = matchRows(await restRows("recipes", { query: recipeQuery }), verifyOnly);
   const missing = recipes.filter((_, index) => !before[index]);
-  const inserted = missing.length ? await restRows("recipes", {
+  const shouldInsert = !preflight && !verifyOnly && missing.length > 0;
+  const inserted = shouldInsert ? await restRows("recipes", {
     query: { on_conflict: "sync_key,id", select: "id" },
     method: "POST",
     // These recipes have fixed UUIDs. Simultaneous runs cannot insert both copies.
     // A conflict never updates an existing record.
     headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
-    body: missing.map((recipe) => ({ ...recipe, sync_key: collectionKey })),
+    body: missing.map((recipe) => ({
+      servings: 2,
+      calories_value: null,
+      calories_unit: null,
+      ...recipe,
+      sync_key: collectionKey,
+    })),
   }) : [];
-  const after = missing.length ? matchRows(await restRows("recipes", { query: recipeQuery }), true) : before;
+  const after = shouldInsert ? matchRows(await restRows("recipes", { query: recipeQuery }), true) : before;
   const insertedIds = new Set(inserted.map(({ id }) => id));
   const verifiedRecipes = after.map((row, index) => {
+    const recipe = recipes[index];
+    if (!row) return { title: recipe.title, status: "absente" };
+
     const added = insertedIds.has(row.id);
-    if (added && recipes[index].image_url !== row.image_url) {
-      throw new Error(`La photo n’a pas été enregistrée pour « ${recipes[index].title} ».`);
+    if (added && recipe.image_url !== row.image_url) {
+      throw new Error(`La photo n’a pas été enregistrée pour « ${recipe.title} ».`);
     }
+    const verifiedMetadata = Object.fromEntries(
+      optionalRecipeFields.filter((field) => Object.hasOwn(recipe, field)).map((field) => [field, row[field]]),
+    );
     return {
       title: row.title,
       status: added ? "insérée" : "déjà présente",
       ingredients: row.ingredients.length,
       steps: row.steps.length,
+      ...verifiedMetadata,
     };
   });
 
@@ -151,10 +174,13 @@ export async function seedPastries(config, { verifyOnly = false, fetcher = fetch
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   try {
     const mode = process.argv[2];
-    if (process.argv.length !== 3 || !["--apply", "--verify-only"].includes(mode)) {
-      throw new Error("Usage : node scripts/seed-3-patisseries.mjs --apply | --verify-only");
+    if (process.argv.length !== 3 || !["--apply", "--verify-only", "--preflight"].includes(mode)) {
+      throw new Error("Usage\n  node scripts/seed-3-patisseries.mjs --apply | --verify-only | --preflight");
     }
-    const result = await seedPastries(await readConfig(), { verifyOnly: mode === "--verify-only" });
+    const result = await seedPastries(await readConfig(), {
+      verifyOnly: mode === "--verify-only",
+      preflight: mode === "--preflight",
+    });
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
     console.error(error.message);
