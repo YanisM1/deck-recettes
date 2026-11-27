@@ -120,7 +120,7 @@ export function RecipeForm({
 }: {
   recipe?: Recipe;
   onClose: () => void;
-  onSave: (input: RecipeInput, id?: string) => void;
+  onSave: (input: RecipeInput, id?: string) => void | Promise<void>;
   availableRecipes?: Recipe[];
 }) {
   const [step, setStep] = useState(0),
@@ -185,8 +185,9 @@ export function RecipeForm({
       setError((error as Error).message);
     }
   }
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setError("");
     if (!title.trim()) {
       setStep(0);
@@ -218,7 +219,7 @@ export function RecipeForm({
       const manualCalories = caloriesValue.trim() === ""
         ? { caloriesValue: null, caloriesUnit: null }
         : validateManualCalories(Number(caloriesValue), caloriesUnit);
-      onSave(
+      const saving = onSave(
         {
           title,
           category,
@@ -236,8 +237,14 @@ export function RecipeForm({
         },
         recipe?.id,
       );
+      if (saving) {
+        setBusy(true);
+        await saving;
+      }
     } catch (error) {
       setError((error as Error).message);
+    } finally {
+      setBusy(false);
     }
   }
   return (

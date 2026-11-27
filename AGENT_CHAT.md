@@ -6,6 +6,22 @@
 
 ## 📋 Journal des interventions
 
+## 2026-11-27 — Récupération du livre global : diagnostic confirmé
+
+- Synchronisation Git et npm réussie. Sauvegarde supplémentaire Recipe uniquement dans `/opt/oracle-apps/recipe-migration-backups/pre-recovery-20261127T095804Z-WLuMi1.dump` (mode 600). `pg_restore --file=/dev/null` a lu l’archive intégralement, sans restauration en base.
+- Recettes retrouvées dans le carnet indiqué : Ganache chocolat blanc, Gâteau pistache reine de saba, Cake Amandes, Tagliatelle bolognaise, Gratin pâtes au thon, Pistache & Chocolat blanc, Blanquette de veau sans farine, Financier pistache, Suzy Pierre Hermé. Neuf lignes, hors des 356 autres recettes réparties dans les autres carnets.
+- HTTPS confirme que la version en production reste liée à un code privé : site 200, widget 200 avec le carnet et 9 recettes, widget 401 sans code, API de la table globale 404. Oracle ne possède que les deux tables historiques en l’état. Le conteneur Realtime de Recipe n’a pas été observé parmi les services actifs, même si la publication SQL existe.
+- Le lecteur global local utilise l’URL Oracle, la pagination et `no-store`, sans en-tête de carnet. Les tests de non-régression vérifient l’import des champs historiques, dont les calories et la photo. Il reste à raccorder le lecteur au store et à la nouvelle interface.
+- 241 tests Vitest, 5 tests du script et build réussis sans .env.local. Aucun commit, push ni déploiement à ce stade. La revue automatique a refusé la commande qui ouvre durablement la modification et la suppression anonymes en production. Attendre la confirmation explicite de l’utilisateur avant toute tentative de publication de ces droits.
+
+## 2026-11-27 — Livre global : point de reprise avant ouverture des droits
+
+- `npm run sync` a confirmé que le dépôt était à jour. Une sauvegarde de la seule base Recipe a été créée avant toute opération SQL dans `/opt/oracle-apps/recipe-migration-backups/` (mode 600). Le catalogue `pg_restore --list` contient les données des deux tables Recipe.
+- Inventaire Oracle en lecture seule : 357 recettes réparties dans 88 carnets non vides et 101 marqueurs de carnet. Le carnet déjà fourni par l’utilisateur contient 9 recettes, sans doublon de contenu. Les 348 recettes des 87 autres carnets restent privées en attendant toute attribution explicite.
+- La migration locale crée une table globale fermée aux clients et ajoute la publication Realtime. Le script de copie prend l’empreinte du carnet à migrer et le nombre attendu, préserve les champs et compare toutes les lignes. Aucun changement de schéma, de droits ou de recettes n’a été appliqué à Oracle.
+- Décision demandée : ouverture de la lecture à tous et édition réservée, ou ouverture explicite de l’édition et du Reset à tout visiteur. La réponse déterminera les règles RLS, les tests et la mise en production.
+- Contrôle local sans .env.local : 239 tests Vitest, 5 tests du script et build réussis. Le fichier local a été restauré. Le SQL préparé reste à valider avant application.
+
 ## 2026-11-27 — Oracle, étape 3/3 : reconstruction et vérification de production
 
 - Déploiement du commit `8c71e1a` via `pwsh -NoProfile -File ./scripts/deploy-oracle.ps1 -Revision 8c71e1a`. Le script a transféré une archive Git et exécuté `bash ./build-apps.sh recipe` dans `/opt/oracle-apps`. Image `oracle-recipe:local` confirmée `linux/arm64` et seul `web-recipe-app-1` recréé et démarré.

@@ -1,31 +1,34 @@
 export function buildWidgetScript(
   origin: string,
-  code: string,
-  supabaseUrl: string,
-  apiKey: string,
+  urlOrLegacyCode: string,
+  keyOrLegacyUrl: string,
+  legacyApiKey?: string,
 ) {
+  // The Oracle generator can still call the original four-argument signature.
+  const supabaseUrl = legacyApiKey === undefined ? urlOrLegacyCode : keyOrLegacyUrl;
+  const apiKey = legacyApiKey ?? keyOrLegacyUrl;
   return `// DeckChef — collez ce script dans Scriptable, puis ajoutez son widget.
-// Ce code contient l'accès privé à votre carnet : conservez-le pour vous.
 const APP = ${JSON.stringify(origin)};
-const CODE = ${JSON.stringify(code)};
 const SUPABASE = ${JSON.stringify(supabaseUrl)};
 const APIKEY = ${JSON.stringify(apiKey)};
+const HEADERS = {apikey: APIKEY};
+if (!APIKEY.startsWith('sb_publishable_')) HEADERS.Authorization = 'Bearer ' + APIKEY;
 let data;
 try {
   const req = new Request(APP + '/api/widget-status');
-  req.headers = {'x-deckchef-key': CODE}; req.timeoutInterval = 10;
+  req.timeoutInterval = 10;
   data = await req.loadJSON();
   if (data.error || typeof data.total !== 'number') throw Error('Unavailable');
 } catch (_) {
   // Accès direct au même carnet si le service du widget est indisponible.
   try {
-    const req = new Request(SUPABASE + '/rest/v1/recipes?select=id,title,category&order=created_at.asc,id.asc&limit=1000');
-    req.headers = {apikey: APIKEY, 'x-deckchef-key': CODE}; req.timeoutInterval = 10;
+    const req = new Request(SUPABASE + '/rest/v1/recipes_global?select=id,title,category&order=created_at.asc,id.asc&limit=1000');
+    req.headers = HEADERS; req.timeoutInterval = 10;
     const rows = await req.loadJSON(); if (!Array.isArray(rows)) throw Error('Unavailable');
     const recipe = rows.length ? rows[Math.floor(Date.now()/86400000) % rows.length] : null;
     if (recipe) {
-      const detail = new Request(SUPABASE + '/rest/v1/recipes?select=image_url,ingredients,steps&id=eq.' + encodeURIComponent(recipe.id));
-      detail.headers = {apikey: APIKEY, 'x-deckchef-key': CODE}; detail.timeoutInterval = 10;
+      const detail = new Request(SUPABASE + '/rest/v1/recipes_global?select=image_url,ingredients,steps&id=eq.' + encodeURIComponent(recipe.id));
+      detail.headers = HEADERS; detail.timeoutInterval = 10;
       const details = await detail.loadJSON();
       if (details[0]) Object.assign(recipe, details[0], {ingredients_count:details[0].ingredients.length});
     }

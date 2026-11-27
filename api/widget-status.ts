@@ -2,28 +2,26 @@ import { ORACLE_APP_ORIGIN, oracleSupabaseUrl } from "../src/services/oracleConf
 
 const headers = {
   "Cache-Control": "private, no-store",
-  Vary: "x-deckchef-key",
 };
 const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers });
-export async function GET(request: Request): Promise<Response> {
-  const key = request.headers.get("x-deckchef-key") || "";
-  if (!/^[a-f0-9]{64}$/.test(key))
-    return json({ error: "Code de carnet requis." }, 401);
+export async function GET(_request: Request): Promise<Response> {
   const url = oracleSupabaseUrl(process.env.VITE_SUPABASE_URL),
     apiKey = process.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !apiKey)
     return json({ error: "Synchronisation non configurée." }, 503);
   const origin = ORACLE_APP_ORIGIN;
   try {
+    const requestHeaders = new Headers({ apikey: apiKey, Prefer: "count=exact" });
+    if (!apiKey.startsWith("sb_publishable_")) requestHeaders.set("Authorization", "Bearer " + apiKey);
     const options = {
-      headers: { apikey: apiKey, "x-deckchef-key": key, Prefer: "count=exact" },
+      headers: requestHeaders,
       signal: AbortSignal.timeout(8000),
       cache: "no-store" as RequestCache,
       redirect: "error" as RequestRedirect,
     };
     const countResponse = await fetch(
-      `${url}/rest/v1/recipes?select=id&limit=1`,
+      `${url}/rest/v1/recipes_global?select=id&limit=1`,
       options,
     );
     if (!countResponse.ok) throw Error("Database unavailable");
@@ -40,7 +38,7 @@ export async function GET(request: Request): Promise<Response> {
       });
     const offset = Math.floor(Date.now() / 86400000) % total;
     const response = await fetch(
-      `${url}/rest/v1/recipes?select=id,title,category,image_url,ingredients,steps&order=created_at.asc,id.asc&limit=1&offset=${offset}`,
+      `${url}/rest/v1/recipes_global?select=id,title,category,image_url,ingredients,steps&order=created_at.asc,id.asc&limit=1&offset=${offset}`,
       options,
     );
     if (!response.ok) throw Error("Database unavailable");

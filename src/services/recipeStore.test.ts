@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { RecipeStore, type RemoteRecipes } from "./recipeStore";
 import { starterRecipes } from "../data/recipes";
 import type { RecipeInput, Recipe } from "../types";
@@ -51,6 +51,67 @@ function remote() {
     rows: () => rows,
   };
 }
+describe("livre global", () => {
+  it("ignore les exemples et les écritures anciennes, puis conserve le dernier résultat confirmé", async () => {
+    const db = remote();
+    const cache = storage();
+    const initialize = vi.spyOn(db.api, "initialize");
+    const save = vi.spyOn(db.api, "save");
+    cache.setItem("deckchef.recipes.v1.global", JSON.stringify({
+      recipes: [],
+      queue: [{ type: "reset" }, { type: "save", recipe: starterRecipes[0] }],
+    }));
+    const store = new RecipeStore(cache, db.api, "global", true);
+    expect(store.getSnapshot().recipes).toEqual([]);
+    await store.sync();
+    expect(store.getSnapshot()).toMatchObject({ status: "connected", pending: 0 });
+    expect(store.getSnapshot().lastSync).toBeDefined();
+    expect(initialize).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+
+    const saved = await store.saveConfirmed(input);
+    await store.sync();
+    db.setFail(true);
+    await expect(store.saveConfirmed({ ...input, title: "Soupe verte" }, saved.id)).rejects.toThrow();
+    await expect(store.reset()).rejects.toThrow();
+    await store.sync();
+    expect(store.getSnapshot()).toMatchObject({
+      status: "offline",
+      pending: 0,
+      recipes: [saved],
+    });
+    expect(JSON.parse(cache.getItem(store.cacheKey)!).queue).toEqual([]);
+  });
+
+  it("actualise une session ouverte après pageshow, focus, online, visibilité et Realtime", async () => {
+    const db = remote();
+    const fetch = vi.spyOn(db.api, "fetch");
+    let invalidate = () => {};
+    db.api.listen = (onChange, onStatus) => {
+      invalidate = onChange;
+      onStatus(true);
+      return () => {};
+    };
+    const store = new RecipeStore(storage(), db.api, "global", true);
+    const unsubscribe = store.subscribe(() => {});
+    try {
+      await vi.waitFor(() => expect(store.getSnapshot().status).toBe("connected"));
+      expect(store.getSnapshot().realtime).toBe(true);
+      for (const event of ["pageshow", "focus", "online", "visibilitychange", "realtime"]) {
+        const before = fetch.mock.calls.length;
+        if (event === "realtime") invalidate();
+        else (event === "visibilitychange" ? document : window).dispatchEvent(new Event(event));
+        await vi.waitFor(() => {
+          expect(fetch.mock.calls.length).toBeGreaterThan(before);
+          expect(store.getSnapshot().status).toBe("connected");
+        });
+      }
+    } finally {
+      unsubscribe();
+    }
+  });
+});
+
 describe("carnet local et synchronisation", () => {
   it("démarre avec quatre recettes quand aucune sauvegarde n’existe", () =>
     expect(new RecipeStore(storage(), null).getSnapshot().recipes).toHaveLength(

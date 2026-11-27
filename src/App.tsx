@@ -98,6 +98,10 @@ export default function App() {
             onOpen={openRecipe}
           />
         )
+      ) : !recipes.recipes.length && (recipes.status === "syncing" || recipes.status === "offline") ? (
+        <div className="empty-state" role="status">
+          {recipes.status === "syncing" ? "Chargement du livre de recettes…" : recipes.error}
+        </div>
       ) : (
         <div className="empty-state">
           <ChefHat size={34} />
@@ -137,11 +141,12 @@ export default function App() {
           onClose={closeRecipe}
           onEdit={canEdit ? () => setEditing(selected) : undefined}
           onDelete={canEdit ? () => {
-            getRecipeStore().remove(selected.id);
+            const removing = getRecipeStore().remove(selected.id);
+            if (removing) return removing.then(closeRecipe);
             closeRecipe();
           } : undefined}
           shared={!!(shareRoute.route?.token || shareRoute.route?.snapshot)}
-          synchronized={recipes.status === "connected" && !recipes.pending}
+          synchronized={!shareRoute.route?.snapshot && !!recipes.lastSync}
           layout={preferences.layoutMode}
           themeId={theme.id}
         />
@@ -164,9 +169,13 @@ export default function App() {
           availableRecipes={recipes.recipes}
           onClose={() => setEditing(null)}
           onSave={(input, id) => {
-            const saved = getRecipeStore().save(input, id);
-            setEditing(null);
-            setSelectedId(saved.id);
+            const saved = getRecipeStore().saveConfirmed(input, id);
+            const openSaved = (recipe: Recipe) => {
+              setEditing(null);
+              setSelectedId(recipe.id);
+            };
+            if (saved instanceof Promise) return saved.then(openSaved);
+            openSaved(saved);
           }}
         />
       )}

@@ -23,7 +23,7 @@ export function RecipeReader({
   recipe: Recipe;
   onClose: () => void;
   onEdit?: () => void;
-  onDelete?: () => void;
+  onDelete?: () => void | Promise<void>;
   synchronized?: boolean;
   shared?: boolean;
   layout?: LayoutMode;
@@ -33,6 +33,7 @@ export function RecipeReader({
   const ref = useRef<HTMLDialogElement>(null),
     [checked, setChecked] = useState<Set<number>>(new Set()),
     [confirming, setConfirming] = useState(false),
+    [deleting, setDeleting] = useState(false),
     [showShare, setShowShare] = useState(false),
     [selection, setSelection] = useState<number | null>(null),
     [error, setError] = useState("");
@@ -231,11 +232,10 @@ export function RecipeReader({
       {confirming && onDelete && (
         <Modal
           title="Supprimer cette recette ?"
-          onClose={() => setConfirming(false)}
+          onClose={() => { if (!deleting) setConfirming(false); }}
         >
           <p className="confirmation-copy">
-            « {recipe.title} » sera retirée de votre carnet et des appareils
-            synchronisés.
+            « {recipe.title} » sera retirée du livre de recettes.
           </p>
           {error && (
             <p role="alert" className="notice">
@@ -245,17 +245,26 @@ export function RecipeReader({
           <div className="confirmation-actions">
             <button
               className="secondary-button"
+              disabled={deleting}
               onClick={() => setConfirming(false)}
             >
               La garder
             </button>
             <button
               className="danger-button"
-              onClick={() => {
+              disabled={deleting}
+              onClick={async () => {
+                setError("");
                 try {
-                  onDelete();
+                  const removal = onDelete();
+                  if (removal) {
+                    setDeleting(true);
+                    await removal;
+                  }
                 } catch (error) {
                   setError((error as Error).message);
+                } finally {
+                  setDeleting(false);
                 }
               }}
             >

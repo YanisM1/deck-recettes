@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import { Link2 } from "lucide-react";
 import {
   buildRecipeShareUrl,
-  createRecipeShareToken,
   encodeRecipeShareSnapshot,
   readRecipeShareRoute,
   shareRecipeLink,
 } from "../services/recipeShareLink";
-import { getCollectionKey } from "../services/recipeSync";
 import type { Recipe } from "../types";
 
 export function RecipeLinkShare({
@@ -35,16 +33,13 @@ export function RecipeLinkShare({
   useEffect(() => {
     let active = true;
     async function prepare() {
+      if (synchronized) return { url: buildRecipeShareUrl(recipe.id), textOnly: false };
       if (shared) {
         const route = readRecipeShareRoute();
-        if (route?.token || route?.snapshot) {
-          return { url: buildRecipeShareUrl(recipe.id, route), textOnly: false };
+        if (route?.snapshot) {
+          return { url: buildRecipeShareUrl(recipe.id, { snapshot: route.snapshot }), textOnly: false };
         }
       }
-      const token = synchronized
-        ? await createRecipeShareToken(recipe.id, getCollectionKey())
-        : null;
-      if (token) return { url: buildRecipeShareUrl(recipe.id, { token }), textOnly: false };
       const snapshot = await encodeRecipeShareSnapshot(recipe);
       return {
         url: snapshot ? buildRecipeShareUrl(recipe.id, { snapshot }) : null,

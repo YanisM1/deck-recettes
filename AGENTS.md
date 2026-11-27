@@ -6,7 +6,7 @@ Lire `AGENTS.md` et `AGENT_CHAT.md` avant tout travail. Sur un clone existant, d
 
 - PWA française React, TypeScript et Vite. Cible iPhone 16 Pro à 393 × 852 CSS px et interface responsive. Utiliser le viewport dynamique avec `viewport-fit=cover`. Respecter la Dynamic Island et le Home Indicator avec des zones sûres minimales de 59 px en haut et 34 px en bas. Centrer les dialogues avec `margin: auto`.
 - Cartes par défaut et mode Livre dans tous les thèmes. Filtres Salé et Sucré indépendants et cumulatifs, préférences persistées et synchronisées entre onglets. Aucun menu de navigation à l’écran principal.
-- CRUD complet, sauvegarde locale et file de synchronisation. Deux confirmations pour le Reset Total du seul carnet courant. L’application fonctionne en `localStorage` sans configuration du serveur.
+- CRUD public sur le livre global avec deux confirmations avant de le vider. Le cache local conserve la dernière copie synchronisée. Sans configuration serveur, l’application fonctionne en mode local avec `localStorage`.
 
 ## Production Oracle
 
@@ -15,7 +15,7 @@ Lire `AGENTS.md` et `AGENT_CHAT.md` avant tout travail. Sur un clone existant, d
 - Supabase Recipe auto-hébergé : https://supabase-recipe.84.235.237.224.sslip.io/ (REST sous `/rest/v1/`).
 - SSH : `ubuntu@84.235.237.224`. Clé privée locale `_migration_oracle/ssh-key-2026-11-25.key`. Kit partagé `_migration_oracle/deploy/`, actuellement dans le dossier parent du clone. Vérifier la clé d’hôte avec `deploy/known_hosts`.
 - VM Oracle Cloud Always Free Ampere A1, Ubuntu 26.04, ARM64 (`aarch64`), 2 OCPU et 12 Go de RAM. Docker Compose avec `restart: unless-stopped`. Caddy fournit HTTPS avec sslip.io et Let's Encrypt. Supabase utilise une stack ARM64 allégée.
-- DeckChef utilise uniquement `public.recipes`, `public.recipe_collections` et ses fonctions dédiées. Préserver les codes privés de 64 caractères et l’en-tête `x-deckchef-key`, RLS et l’isolation des carnets. Realtime transporte des invalidations sans données. Interdiction de toucher aux tables, conteneurs ou configurations KAL.
+- L’application et le widget utilisent `public.recipes_global`. Les visiteurs sans connexion peuvent lire, ajouter, modifier, supprimer et vider ce livre. Les tables historiques `public.recipes` et `public.recipe_collections` gardent leur accès privé. Realtime écoute `postgres_changes` sur la table globale. Interdiction de toucher aux tables, conteneurs ou configurations KAL.
 - `deckchef.js` utilise uniquement l’application Oracle et Supabase Recipe Oracle pour les API et données du carnet.
 - `GEMINI_API_KEY` et les secrets Supabase restent dans les fichiers `.env` de déploiement Oracle. Seuls l’URL et la clé publique anon/publishable peuvent être compilés côté client. Exclure les secrets, `_migration_oracle/`, `*.key`, `*.pem`, `.env*` privés et `gemini-key.txt` de Git.
 - Le dump quotidien tourne à 02h13 UTC dans `/var/backups/oracle-apps/`. Préserver le cron et le dossier.
@@ -46,4 +46,4 @@ Sur Oracle, le kit exécute la commande suivante une fois l’archive `source/re
 cd /opt/oracle-apps && bash ./build-apps.sh recipe
 ```
 
-Après déploiement, vérifier `linux/arm64`, `web-recipe-app-1` en état `Up`, l’accueil HTTPS et `/_health`. L’API widget doit refuser une requête sans code de carnet. Aucun fichier de configuration local n’est transféré.
+Après déploiement, vérifier `linux/arm64`, `web-recipe-app-1` en état `Up`, l’accueil HTTPS et `/_health`. Vérifier la lecture du livre global, l’abonnement Realtime et l’API widget sans code de carnet. L’archive Git contient uniquement les fichiers suivis.

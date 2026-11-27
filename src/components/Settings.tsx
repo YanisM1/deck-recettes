@@ -6,12 +6,7 @@ import {
   themes,
   usePreferences,
 } from "../services/preferences";
-import {
-  getCollectionKey,
-  getRecipeStore,
-  openCollection,
-  useRecipes,
-} from "../services/recipeSync";
+import { getRecipeStore, useRecipes } from "../services/recipeSync";
 import { ORACLE_APP_ORIGIN, oracleSupabaseUrl } from "../services/oracleConfig";
 import { buildWidgetScript } from "../services/widgetScript";
 export function Settings({ onClose }: { onClose: () => void }) {
@@ -20,7 +15,8 @@ export function Settings({ onClose }: { onClose: () => void }) {
   const widgetApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const data = useRecipes(),
     [resetStage, setResetStage] = useState(0),
-    [code, setCode] = useState(""),
+    [resetBusy, setResetBusy] = useState(false),
+    [resetError, setResetError] = useState(""),
     [notice, setNotice] = useState("");
   function updatePreferences(value: Parameters<typeof setPreferences>[0]) {
     try {
@@ -31,20 +27,11 @@ export function Settings({ onClose }: { onClose: () => void }) {
       );
     }
   }
-  async function copyCode() {
-    try {
-      await navigator.clipboard.writeText(getCollectionKey());
-      setNotice("Code du carnet copié.");
-    } catch {
-      setNotice("Copie indisponible. Sélectionnez le code ci-dessous.");
-    }
-  }
   async function copyWidget() {
     try {
       await navigator.clipboard.writeText(
         buildWidgetScript(
           ORACLE_APP_ORIGIN,
-          getCollectionKey(),
           widgetUrl || "",
           widgetApiKey || "",
         ),
@@ -64,35 +51,42 @@ export function Settings({ onClose }: { onClose: () => void }) {
         title={
           resetStage === 1 ? "Repartir de zéro ?" : "Dernière confirmation"
         }
-        onClose={() => setResetStage(0)}
+        onClose={() => { if (!resetBusy) setResetStage(0); }}
       >
         <p className="confirmation-copy">
           {resetStage === 1
-            ? "Toutes les recettes et photos de ce carnet seront effacées, sur tous les appareils qui partagent son code."
-            : "Cette suppression est définitive. Les autres carnets et applications ne seront pas affectés."}
+            ? data.status === "local"
+              ? "Toutes les recettes enregistrées sur cet appareil seront effacées."
+              : "Toutes les recettes et photos du livre global seront effacées pour tous les visiteurs."
+            : "Cette suppression est définitive."}
         </p>
+        {resetError && <p className="notice" role="alert">{resetError}</p>}
         <div className="confirmation-actions">
-          <button className="secondary-button" onClick={() => setResetStage(0)}>
+          <button className="secondary-button" disabled={resetBusy} onClick={() => setResetStage(0)}>
             Annuler
           </button>
           <button
             className="danger-button"
-            onClick={() => {
+            disabled={resetBusy}
+            onClick={async () => {
               if (resetStage === 1) {
                 setResetStage(2);
                 return;
               }
+              setResetBusy(true);
+              setResetError("");
               try {
-                getRecipeStore().reset();
+                await getRecipeStore().reset();
                 setResetStage(0);
-                setNotice("Le carnet est vide.");
+                setNotice("Le livre est vide.");
               } catch (error) {
-                setNotice((error as Error).message);
-                setResetStage(0);
+                setResetError((error as Error).message);
+              } finally {
+                setResetBusy(false);
               }
             }}
           >
-            {resetStage === 1 ? "Continuer" : "Oui, effacer mon carnet"}
+            {resetStage === 1 ? "Continuer" : "Oui, effacer toutes les recettes"}
           </button>
         </div>
       </Modal>
@@ -154,10 +148,10 @@ export function Settings({ onClose }: { onClose: () => void }) {
           : data.status === "syncing"
             ? "Synchronisation…"
             : data.status === "offline"
-              ? "Hors ligne · sauvegarde locale"
+              ? "Hors ligne · dernière copie du livre"
               : data.realtime
                 ? "Supabase · temps réel connecté"
-                : "Supabase · carnet synchronisé"}
+                : "Supabase · livre global synchronisé"}
         <button
           className="small-icon"
           aria-label="Synchroniser maintenant"
@@ -166,57 +160,14 @@ export function Settings({ onClose }: { onClose: () => void }) {
           <RefreshCw size={14} />
         </button>
       </div>
-      {data.pending > 0 && (
+      {data.lastSync && (
         <p className="fine-print">
-          {data.pending} modification{data.pending > 1 ? "s" : ""} en attente.
+          Dernière synchronisation{" "}
+          <time dateTime={data.lastSync}>
+            {new Date(data.lastSync).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "medium" })}
+          </time>
         </p>
       )}
-      <details className="sync-details">
-        <summary>Retrouver mon carnet sur un autre appareil</summary>
-        <p className="fine-print">
-          Copiez ce code privé, puis ouvrez ce carnet dans les réglages de votre
-          autre appareil. Toute personne qui possède le code peut modifier ses
-          recettes.
-        </p>
-        <div className="code-row">
-          <input
-            aria-label="Code privé de ce carnet"
-            readOnly
-            value={getCollectionKey()}
-          />
-          <button
-            className="small-icon"
-            onClick={() => void copyCode()}
-            aria-label="Copier le code du carnet"
-          >
-            <Copy size={16} />
-          </button>
-        </div>
-        <label className="field-label" htmlFor="collection-code">
-          Ouvrir un carnet existant
-        </label>
-        <input
-          id="collection-code"
-          className="text-input"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="Collez votre code privé"
-          autoComplete="off"
-          spellCheck={false}
-        />
-        <button
-          className="secondary-button full-width"
-          onClick={() => {
-            try {
-              openCollection(code);
-            } catch (error) {
-              setNotice((error as Error).message);
-            }
-          }}
-        >
-          Ouvrir ce carnet
-        </button>
-      </details>
       <details className="sync-details widget-help">
         <summary>Une recette sur l’écran d’accueil</summary>
         <p className="fine-print">
@@ -232,7 +183,7 @@ export function Settings({ onClose }: { onClose: () => void }) {
           <Copy size={14} /> Copier le script Scriptable
         </button>
       </details>
-      <button className="reset-button" onClick={() => setResetStage(1)}>
+      <button className="reset-button" onClick={() => { setResetError(""); setResetStage(1); }}>
         <Trash2 size={15} /> Reset Total · repartir de zéro
       </button>
       {notice && (

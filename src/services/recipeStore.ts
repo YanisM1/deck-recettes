@@ -11,7 +11,7 @@ export type Operation =
 export interface RemoteRecipes {
   initialize(recipes: Recipe[]): Promise<void>;
   fetch(): Promise<Recipe[]>;
-  save(recipe: Recipe): Promise<void>;
+  save(recipe: Recipe, existing?: boolean): Promise<void>;
   remove(id: string): Promise<void>;
   reset(): Promise<void>;
   listen?(
@@ -26,6 +26,7 @@ export interface RecipeSnapshot {
   pending: number;
   realtime: boolean;
   error: string | null;
+  lastSync?: string;
 }
 type Cache = { recipes: Recipe[]; queue: Operation[] };
 
@@ -94,6 +95,7 @@ export class RecipeStore {
   private listeners = new Set<() => void>();
   private running: Promise<void> | null = null;
   private again = false;
+  private writeTail = Promise.resolve();
   private stopRemote?: () => void;
   private timer?: ReturnType<typeof setInterval>;
   readonly cacheKey: string;
@@ -101,9 +103,10 @@ export class RecipeStore {
     private storage: Pick<Storage, "getItem" | "setItem">,
     private remote: RemoteRecipes | null,
     collectionKey = "local",
+    private authoritative = false,
   ) {
     this.cacheKey = `deckchef.recipes.v1.${collectionKey}`;
-    let recipes = starterRecipes.map((r) => ({
+    let recipes = (authoritative ? [] : starterRecipes).map((r) => ({
       ...r,
       ingredients: [...r.ingredients],
       steps: [...r.steps],
@@ -120,7 +123,7 @@ export class RecipeStore {
         cache.queue.every(isOperation)
       ) {
         recipes = cache.recipes.map(readCachedRecipe);
-        this.queue = cache.queue.map(readCachedOperation);
+        if (!authoritative) this.queue = cache.queue.map(readCachedOperation);
       }
     } catch {
       /* Une sauvegarde illisible ne bloque pas l'application. */
@@ -164,7 +167,7 @@ export class RecipeStore {
     if (document.visibilityState === "visible") this.refresh();
   };
   private storageChanged = (event: StorageEvent) => {
-    if (event.key !== this.cacheKey) return;
+    if (this.authoritative || event.key !== this.cacheKey) return;
     try {
       const cache = JSON.parse(event.newValue || "null") as Cache;
       if (
@@ -186,6 +189,7 @@ export class RecipeStore {
     if (typeof window !== "undefined") {
       window.addEventListener("online", this.refresh);
       window.addEventListener("focus", this.refresh);
+      window.addEventListener("pageshow", this.refresh);
       window.addEventListener("storage", this.storageChanged);
       document.addEventListener("visibilitychange", this.visible);
     }
@@ -202,11 +206,12 @@ export class RecipeStore {
     if (typeof window !== "undefined") {
       window.removeEventListener("online", this.refresh);
       window.removeEventListener("focus", this.refresh);
+      window.removeEventListener("pageshow", this.refresh);
       window.removeEventListener("storage", this.storageChanged);
       document.removeEventListener("visibilitychange", this.visible);
     }
   }
-  save(input: RecipeInput, id?: string) {
+  private prepareRecipe(input: RecipeInput, id?: string) {
     const title = input.title.trim(),
       ingredients = input.ingredients.map((v) => v.trim()).filter(Boolean),
       steps = input.steps.map((v) => v.trim()).filter(Boolean);
@@ -240,6 +245,16 @@ export class RecipeStore {
       });
     recipe.linkedRecipeIds = normalizeLinkedRecipeIds(input.linkedRecipeIds, recipe.id);
     validateRecipeLinks(recipe.id, recipe.linkedRecipeIds, this.state.recipes);
+    return recipe;
+  }
+  saveConfirmed(input: RecipeInput, id?: string) {
+    if (!this.authoritative) return this.save(input, id);
+    const recipe = this.prepareRecipe(input, id);
+    return this.writeConfirmed({ type: "save", recipe }, recipe, !!id);
+  }
+  save(input: RecipeInput, id?: string) {
+    if (this.authoritative) throw new Error("Utilisez la sauvegarde du livre global.");
+    const recipe = this.prepareRecipe(input, id);
     const operation: Operation = { type: "save", recipe };
     this.persist(applyOperations(this.state.recipes, [operation]), [
       ...this.queue,
@@ -250,6 +265,7 @@ export class RecipeStore {
   }
   remove(id: string) {
     const operation: Operation = { type: "delete", id };
+    if (this.authoritative) return this.writeConfirmed(operation, undefined);
     this.persist(applyOperations(this.state.recipes, [operation]), [
       ...this.queue,
       operation,
@@ -258,8 +274,36 @@ export class RecipeStore {
   }
   reset() {
     const operation: Operation = { type: "reset" };
+    if (this.authoritative) return this.writeConfirmed(operation, undefined);
     this.persist([], [...this.queue, operation]);
     void this.sync();
+  }
+  private setRemoteRecipes(recipes: Recipe[]) {
+    try {
+      this.storage.setItem(this.cacheKey, JSON.stringify({ recipes, queue: [] }));
+    } catch {
+      // Un cache saturé ne doit pas masquer les recettes confirmées par le serveur.
+    }
+    this.update({ recipes });
+  }
+  private writeConfirmed<T>(operation: Operation, result: T, existing?: boolean) {
+    const write = this.writeTail.then(async () => {
+      const remote = this.remote!;
+      try {
+        if (operation.type === "save") await remote.save(operation.recipe, existing);
+        else if (operation.type === "delete") await remote.remove(operation.id);
+        else await remote.reset();
+      } catch {
+        throw new Error("La modification n’a pas été confirmée. Synchronisez le livre avant de réessayer.");
+      }
+      // A read started before the write may still return the previous snapshot.
+      await this.running;
+      this.setRemoteRecipes(applyOperations(this.state.recipes, [operation]));
+      void this.sync();
+      return result;
+    });
+    this.writeTail = write.then(() => {}, () => {});
+    return write;
   }
   sync(): Promise<void> {
     if (!this.remote) return Promise.resolve();
@@ -280,6 +324,11 @@ export class RecipeStore {
     const remote = this.remote!;
     this.update({ status: "syncing", error: null });
     try {
+      if (this.authoritative) {
+        this.setRemoteRecipes(await remote.fetch());
+        this.update({ status: "connected", lastSync: new Date().toISOString() });
+        return;
+      }
       await remote.initialize(this.state.recipes);
       let changed = false;
       while (this.queue.length) {
@@ -301,7 +350,9 @@ export class RecipeStore {
       this.update({
         status: "offline",
         error:
-          "Synchronisation indisponible. Vos changements restent sauvegardés sur cet appareil.",
+          this.authoritative
+            ? "Le livre global est temporairement indisponible."
+            : "Synchronisation indisponible. Vos changements restent sauvegardés sur cet appareil.",
       });
     }
   }
