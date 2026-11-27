@@ -71,4 +71,4 @@
 
 ## Portée
 
-Les contrôles ont été réalisés avec un navigateur de bureau au viewport demandé et avec le projet Supabase réel. L’appareil photo physique, l’installation sur l’écran d’accueil iOS et l’exécution de Scriptable n’ont pas été testés sur un iPhone réel. La protection Vercel de connexion est conservée ; le widget a un accès direct Supabase de secours.
+Les contrôles ont été réalisés avec un navigateur de bureau au viewport demandé et avec le projet Supabase réel. L’appareil photo physique, l’installation sur l’écran d’accueil iOS et l’exécution de Scriptable n’ont pas été testés sur un iPhone réel. Le widget utilise le service DeckChef Oracle et un accès direct Supabase Recipe de secours.

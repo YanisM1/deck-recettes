@@ -1,3 +1,4 @@
+import { oracleSupabaseUrl } from "./oracleConfig";
 import { useSyncExternalStore } from "react";
 import {
   createClient,
@@ -75,7 +76,7 @@ export function openCollection(key: string) {
   window.location.reload();
 }
 function createRecipeClient(key?: string): SupabaseClient<Database> | null {
-  const url = import.meta.env.VITE_SUPABASE_URL,
+  const url = oracleSupabaseUrl(import.meta.env.VITE_SUPABASE_URL),
     apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !apiKey || import.meta.env.MODE === "test") return null;
   try {

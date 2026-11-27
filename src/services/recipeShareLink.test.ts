@@ -24,7 +24,7 @@ afterEach(() => {
 describe("route de recette partagée", () => {
   it("construit le lien de production et garde le jeton dans le fragment", () => {
     const url = buildRecipeShareUrl(recipe.id.toUpperCase(), { token });
-    expect(url).toBe(`https://deck-recettes.vercel.app/?recipe=${recipe.id}#share=${token}`);
+    expect(url).toBe(`https://recipe.84.235.237.224.sslip.io/?recipe=${recipe.id}#share=${token}`);
     expect(readRecipeShareRoute(new URL(url))).toEqual({
       id: recipe.id,
       token,

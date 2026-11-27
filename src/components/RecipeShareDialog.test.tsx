@@ -64,7 +64,7 @@ it("copie le lien, ouvre le partage natif et affiche la confirmation", async () 
 
   expect(await screen.findByRole("status")).toHaveTextContent("Lien copié !");
   const url = writeText.mock.calls[0][0];
-  expect(url).toMatch(new RegExp(`^https://deck-recettes\\.vercel\\.app/\\?recipe=${recipe.id}#snapshot=`));
+  expect(url).toMatch(new RegExp(`^https://recipe\\.84\\.235\\.237\\.224\\.sslip\\.io/\\?recipe=${recipe.id}#snapshot=`));
   expect(share).toHaveBeenCalledWith({
     title: recipe.title,
     text: `Découvre ma recette : ${recipe.title}`,

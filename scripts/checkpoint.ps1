@@ -41,5 +41,4 @@ if ($LASTEXITCODE -ne 0) { throw 'git add en échec' }
 if ($LASTEXITCODE -ne 0) { throw 'Commit en échec' }
 & git -c "safe.directory=$repoPath" push origin main
 if ($LASTEXITCODE -ne 0) { throw 'Push en échec' }
-& npm.cmd exec --yes --package=vercel@65.16.0 -- vercel --prod --yes
-if ($LASTEXITCODE -ne 0) { throw 'Déploiement en échec' }
+Write-Output "Commit poussé. Pour un changement applicatif, SQL ou d’environnement, poursuivre le déploiement Oracle décrit dans AGENTS.md."

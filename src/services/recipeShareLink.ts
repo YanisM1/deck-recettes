@@ -3,7 +3,9 @@ import { isPanSize, type Recipe } from "../types";
 import { isRecipe } from "./recipeStore";
 import { readManualCalories } from "./manualCalories";
 
-export const RECIPE_SHARE_PRODUCTION_ORIGIN = "https://deck-recettes.vercel.app";
+import { ORACLE_APP_ORIGIN } from "./oracleConfig";
+
+export const RECIPE_SHARE_PRODUCTION_ORIGIN = ORACLE_APP_ORIGIN;
 const RECIPE_ID = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
 const SHARE_TOKEN = /^[a-f0-9]{64}$/;
 const MAX_SNAPSHOT_LENGTH = 12_000;

@@ -1,0 +1,9 @@
+.git
+.env*
+*.key
+*.pem
+gemini-key.txt
+_migration_oracle/
+.tools/
+node_modules/
+dist/

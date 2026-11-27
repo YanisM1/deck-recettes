@@ -17,7 +17,7 @@ try {
   data = await req.loadJSON();
   if (data.error || typeof data.total !== 'number') throw Error('Unavailable');
 } catch (_) {
-  // Accès direct au même carnet si le site demande une connexion Vercel.
+  // Accès direct au même carnet si le service du widget est indisponible.
   try {
     const req = new Request(SUPABASE + '/rest/v1/recipes?select=id,title,category&order=created_at.asc,id.asc&limit=1000');
     req.headers = {apikey: APIKEY, 'x-deckchef-key': CODE}; req.timeoutInterval = 10;

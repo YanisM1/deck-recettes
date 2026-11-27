@@ -1,3 +1,5 @@
+import { ORACLE_APP_ORIGIN, oracleSupabaseUrl } from "../src/services/oracleConfig.js";
+
 const headers = {
   "Cache-Control": "private, no-store",
   Vary: "x-deckchef-key",
@@ -8,18 +10,17 @@ export async function GET(request: Request): Promise<Response> {
   const key = request.headers.get("x-deckchef-key") || "";
   if (!/^[a-f0-9]{64}$/.test(key))
     return json({ error: "Code de carnet requis." }, 401);
-  const url = process.env.VITE_SUPABASE_URL,
+  const url = oracleSupabaseUrl(process.env.VITE_SUPABASE_URL),
     apiKey = process.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !apiKey)
     return json({ error: "Synchronisation non configurée." }, 503);
-  const origin =
-    "https://" +
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL || "deck-recettes.vercel.app");
+  const origin = ORACLE_APP_ORIGIN;
   try {
     const options = {
       headers: { apikey: apiKey, "x-deckchef-key": key, Prefer: "count=exact" },
       signal: AbortSignal.timeout(8000),
       cache: "no-store" as RequestCache,
+      redirect: "error" as RequestRedirect,
     };
     const countResponse = await fetch(
       `${url}/rest/v1/recipes?select=id&limit=1`,

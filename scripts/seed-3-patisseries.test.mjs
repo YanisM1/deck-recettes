@@ -6,7 +6,7 @@ import { seedPastries } from "./seed-3-patisseries.mjs";
 const recipes = JSON.parse(await readFile(new URL("./seed-3-patisseries.json", import.meta.url)));
 const savoryRecipe = recipes.find(({ category }) => category === "sale");
 const config = {
-  origin: "https://test-project.supabase.co",
+  origin: "https://supabase-recipe.84.235.237.224.sslip.io",
   apiKey: "sb_publishable_test",
   collectionKey: "a".repeat(64),
 };

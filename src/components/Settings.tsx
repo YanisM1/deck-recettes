@@ -12,9 +12,12 @@ import {
   openCollection,
   useRecipes,
 } from "../services/recipeSync";
+import { ORACLE_APP_ORIGIN, oracleSupabaseUrl } from "../services/oracleConfig";
 import { buildWidgetScript } from "../services/widgetScript";
 export function Settings({ onClose }: { onClose: () => void }) {
   const preferences = usePreferences();
+  const widgetUrl = oracleSupabaseUrl(import.meta.env.VITE_SUPABASE_URL);
+  const widgetApiKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const data = useRecipes(),
     [resetStage, setResetStage] = useState(0),
     [code, setCode] = useState(""),
@@ -40,10 +43,10 @@ export function Settings({ onClose }: { onClose: () => void }) {
     try {
       await navigator.clipboard.writeText(
         buildWidgetScript(
-          "https://deck-recettes.vercel.app",
+          ORACLE_APP_ORIGIN,
           getCollectionKey(),
-          import.meta.env.VITE_SUPABASE_URL || "",
-          import.meta.env.VITE_SUPABASE_ANON_KEY || "",
+          widgetUrl || "",
+          widgetApiKey || "",
         ),
       );
       setNotice(
@@ -223,7 +226,7 @@ export function Settings({ onClose }: { onClose: () => void }) {
         </p>
         <button
           className="secondary-button full-width"
-          disabled={!import.meta.env.VITE_SUPABASE_URL}
+          disabled={!widgetUrl || !widgetApiKey}
           onClick={() => void copyWidget()}
         >
           <Copy size={14} /> Copier le script Scriptable

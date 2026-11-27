@@ -23,7 +23,7 @@ it("fonctionne sans configuration en retournant une erreur explicite", async () 
   ).toBe(503);
 });
 it("lit uniquement le carnet demandé et interdit le cache partagé", async () => {
-  vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
+  vi.stubEnv("VITE_SUPABASE_URL", "https://supabase-recipe.84.235.237.224.sslip.io");
   vi.stubEnv("VITE_SUPABASE_ANON_KEY", "public-test");
   const fetcher = vi
     .fn()
@@ -50,7 +50,9 @@ it("lit uniquement le carnet demandé et interdit le cache partagé", async () =
   );
   expect(result.status).toBe(200);
   expect(result.headers.get("cache-control")).toBe("private, no-store");
-  expect((await result.json()).recipe.title).toBe("Soupe");
+  const payload = await result.json();
+  expect(payload.recipe.title).toBe("Soupe");
+  expect(payload.app_url).toBe("https://recipe.84.235.237.224.sslip.io/?recipe=one");
   expect(fetcher.mock.calls[0][1].headers["x-deckchef-key"]).toBe(
     "a".repeat(64),
   );

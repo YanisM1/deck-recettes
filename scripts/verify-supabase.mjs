@@ -10,6 +10,9 @@ const env = Object.fromEntries(
       return [l.slice(0, i), l.slice(i + 1)];
     }),
 );
+if (!/^https:\/\/supabase-recipe\.84\.235\.237\.224\.sslip\.io\/?$/.test(env.VITE_SUPABASE_URL ?? "")) {
+  throw new Error("Utilisez exclusivement Supabase Recipe sur Oracle.");
+}
 const keys = [randomBytes(32).toString("hex"), randomBytes(32).toString("hex")];
 const clients = keys.map((key) =>
   createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY, {

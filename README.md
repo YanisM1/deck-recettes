@@ -12,9 +12,9 @@ Le formulaire propose le moule d’origine 20, 26 ou 28 cm pour le sucré ; le s
 
 ## Application
 
-- Production : https://deck-recettes.vercel.app
+- Production : https://recipe.84.235.237.224.sslip.io/
 - Dépôt : https://github.com/YanisM1/deck-recettes
-- Supabase : https://supabase.com/dashboard/project/miltqwovqupvnaibjdgc
+- Supabase : https://supabase-recipe.84.235.237.224.sslip.io/rest/v1/
 
 Dans Réglages, choisissez **Paquet de cartes** ou **Livre de recettes**, puis l’une des dix palettes. Le choix est conservé et diffusé entre onglets. Le livre possède une reliure, une tranche de pages, une photo encadrée et un tourne-page 3D. Les filtres Salé/Sucré sont indépendants et cumulatifs.
 
@@ -36,7 +36,7 @@ Le partage d’une recette liée utilise une copie autonome avec les ingrédient
 
 `npm install`, `npm run dev`, `npm test`, `npm run build`. `npm run sync` effectue `git pull origin main && npm install`.
 
-Les tests et le build fonctionnent sans `.env.local` : le carnet utilise alors uniquement localStorage. Pour le cloud, configurez les deux variables publiques de `.env.example`. Aucune clé de service n’est utilisée. `scripts/checkpoint.ps1 -Message "..."` lance tests, build, commit, push Git et déploiement Vercel. La connexion GitHub utilise la CLI `gh` ; les publications passent par `git`.
+Les tests et le build fonctionnent sans `.env.local` : le carnet utilise alors uniquement localStorage. Pour synchroniser avec Oracle, configurez les deux variables publiques de `.env.example`. Aucune clé de service n’est utilisée. `scripts/checkpoint.ps1 -Message "..."` lance tests, build, commit et push Git. Pour un changement applicatif, appliquer ensuite la procédure Docker Oracle de `AGENTS.md`. La connexion GitHub utilise la CLI `gh` ; les publications passent par `git`.
 
 L’option `-WithoutSecrets` du checkpoint vérifie aussi l’absence de `.env.local` et `gemini-key.txt`, restaure ces fichiers dans un bloc `finally` et contrôle le bundle avant la publication. Un environnement vierge peut simplement lancer `npm test` puis `npm run build`.
 
@@ -44,7 +44,7 @@ Vite expose uniquement les variables `VITE_SUPABASE_`. Aucune clé Gemini ou de 
 
 ## Données et synchronisation
 
-La limite de deux projets Supabase gratuits empêchait d’en créer un troisième. DeckChef ajoute uniquement `recipes` et `recipe_collections` au projet existant. Les tables, politiques et données des autres applications sont conservées.
+DeckChef utilise les tables `recipes` et `recipe_collections` de son instance Supabase auto-hébergée sur Oracle. Le périmètre de déploiement s’arrête au service Recipe.
 
 Chaque carnet reçoit un code privé aléatoire de 64 caractères. Les règles RLS n’autorisent que les lignes dont le code correspond à l’en-tête `x-deckchef-key`. Copiez ce code dans Réglages, puis ouvrez le même carnet sur l’autre appareil. Toute personne possédant ce code peut accéder à ce carnet : conservez-le pour vous.
 
@@ -62,7 +62,7 @@ Cadre de référence demandé : 393 × 852 CSS px ; zones sûres minimales de 59
 
 Dans Safari : **Partager → Sur l’écran d’accueil**. Le service worker conserve les fichiers de l’application et les photos de démonstration pour le hors ligne ; il ne met en cache aucune API ni donnée Supabase.
 
-Les réglages permettent de copier un script Scriptable personnel pour le widget iPhone. Il appelle `/api/widget-status` avec le code privé en en-tête et dispose d’un accès Supabase direct de secours si Vercel demande une connexion. La protection Vercel existante reste active ; une connexion Vercel peut être demandée à l’ouverture du site.
+Les réglages permettent de copier un script Scriptable personnel pour le widget iPhone. Il appelle `/api/widget-status` avec le code privé en en-tête et dispose d’un accès Supabase direct de secours si le service de widget est indisponible. Recréez `deckchef.js` depuis les réglages sur l’origine Oracle pour mettre à jour un widget déjà installé.
 
 ## Vérifications et limites
 

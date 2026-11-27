@@ -34,8 +34,9 @@ function verifyConfig({ origin, apiKey, collectionKey }) {
   if (!/^[a-f0-9]{64}$/.test(collectionKey ?? "")) {
     throw new Error("Indiquez le code privé du carnet cible via DECKCHEF_SEED_COLLECTION_KEY dans .env.local ou dans l’environnement du processus.");
   }
-  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(origin ?? "")) {
-    throw new Error("VITE_SUPABASE_URL doit désigner un projet Supabase hébergé en HTTPS.");
+  if (origin !== "https://supabase-recipe.84.235.237.224.sslip.io" &&
+      origin !== "https://supabase-recipe.84.235.237.224.sslip.io/") {
+    throw new Error("VITE_SUPABASE_URL doit désigner Supabase Recipe sur Oracle.");
   }
   if (!apiKey) throw new Error("VITE_SUPABASE_ANON_KEY est nécessaire.");
   if (apiKey.startsWith("sb_publishable_")) return { apikey: apiKey };

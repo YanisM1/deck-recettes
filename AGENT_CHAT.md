@@ -6,6 +6,13 @@
 
 ## 📋 Journal des interventions
 
+## 2026-11-27 — Oracle, étape 2/3 : configuration et widget
+
+- Le partage, le widget Scriptable et son API génèrent les URL Oracle. Le client et les scripts de vérification refusent une autre base. Les règles de carnet, RLS et le schéma SQL n’ont pas changé.
+- Configuration locale historique archivée hors du dépôt. Le clone fonctionne hors ligne avec la clé publique locale vide. La VM injecte sa configuration publique au build, et ses secrets restent côté serveur.
+- 239 tests Vitest, 5 tests du script et build réussis sans .env.local. Vérification initiale Oracle : accueil, /_health et /rest/v1/ répondent 200. Le widget sans code répond 401.
+- Le script de déploiement archive le commit Git et cible uniquement le service Recipe. Reconstruction Oracle après publication de ce jalon, avant le contrôle final.
+
 ## 2026-11-27 — Oracle, étape 1/3 : gouvernance et exclusions Git
 
 - npm run sync a confirmé que main est à jour. AGENTS.md et CLAUDE.md décrivent Oracle ARM64, l’isolation de Recipe et la livraison Docker. Exclusions Git du kit et des clés ajoutées.
