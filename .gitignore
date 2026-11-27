@@ -11,3 +11,6 @@ test-results/
 *.tsbuildinfo
 supabase/.temp/
 gemini-key.txt
+_migration_oracle/
+*.key
+*.pem

@@ -1,5 +1,18 @@
 # Journal DeckChef (antichronologique)
 
+## 💬 Questions / Blocages / Messages entre agents
+
+- Oracle est la seule cible de production. Les entrées antérieures au 27 novembre 2026 décrivent l’infrastructure historique.
+
+## 📋 Journal des interventions
+
+## 2026-11-27 — Oracle, étape 1/3 : gouvernance et exclusions Git
+
+- npm run sync a confirmé que main est à jour. AGENTS.md et CLAUDE.md décrivent Oracle ARM64, l’isolation de Recipe et la livraison Docker. Exclusions Git du kit et des clés ajoutées.
+- SSH a confirmé aarch64, oracle-recipe:local linux/arm64 et web-recipe-app-1 Up. Étape documentaire, sans changement applicatif ni reconstruction.
+- Validation sans .env.local : 239 tests Vitest, 5 tests du script et build réussis. Audit et recâblage du widget, du partage et des scripts au jalon 2.
+# Journal DeckChef (antichronologique)
+
 ## 2026-11-21 — Migration des calories et import du carnet confirmés
 
 - L’utilisateur a appliqué la migration `20261121120000_deckchef_manual_calories.sql` dans l’éditeur SQL du projet DeckChef. Le carnet cible est resté protégé par son code privé. La migration accepte les trois unités manuelles et les chaînes historiques.
