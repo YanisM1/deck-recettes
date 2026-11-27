@@ -29,3 +29,21 @@ Lire `AGENTS.md` et `AGENT_CHAT.md` avant tout travail. Sur un clone existant, d
 5. Si le poste n’a pas le kit et la clé SSH, garder le push Git et signaler, sous `## 💬 Questions / Blocages / Messages entre agents`, que le déploiement Docker Oracle doit être fait depuis Codex local.
 
 Toute commande de déploiement de l’ancien hébergeur et tout accès à l’ancienne base managée sont interdits.
+
+## Commande de déploiement vérifiée
+
+Depuis le clone avec PowerShell 7, après le push du commit applicatif :
+
+```powershell
+pwsh -NoProfile -File ./scripts/deploy-oracle.ps1 -Revision HEAD
+```
+
+Le script retrouve par défaut `../_migration_oracle`. Si le kit est ailleurs, fournir son chemin avec `-Kit`. Il vérifie l’hôte SSH avec `deploy/known_hosts`, transfère une archive Git du commit sans fichier local, puis lance la construction ciblée. Le kit serveur utilise le contexte `/opt/oracle-apps/apps/recipe`, le projet Compose `web-recipe` et le service `app`. La reconstruction utilise les paramètres Recipe déjà présents sur la VM.
+
+Sur Oracle, le kit exécute la commande suivante une fois l’archive `source/recipe.tar` mise à jour :
+
+```bash
+cd /opt/oracle-apps && bash ./build-apps.sh recipe
+```
+
+Après déploiement, vérifier `linux/arm64`, `web-recipe-app-1` en état `Up`, l’accueil HTTPS et `/_health`. L’API widget doit refuser une requête sans code de carnet. Aucun fichier de configuration local n’est transféré.

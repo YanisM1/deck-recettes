@@ -6,6 +6,15 @@
 
 ## 📋 Journal des interventions
 
+## 2026-11-27 — Oracle, étape 3/3 : reconstruction et vérification de production
+
+- Déploiement du commit `8c71e1a` via `pwsh -NoProfile -File ./scripts/deploy-oracle.ps1 -Revision 8c71e1a`. Le script a transféré une archive Git et exécuté `bash ./build-apps.sh recipe` dans `/opt/oracle-apps`. Image `oracle-recipe:local` confirmée `linux/arm64` et seul `web-recipe-app-1` recréé et démarré.
+- Contrôles HTTPS après redéploiement : accueil 200, `/_health` 200 avec état `online`, Supabase Recipe `/rest/v1/` 200, photo 200. Widget 401 sans code et 200 pour le carnet existant, avec `Cache-Control: private, no-store` et lien vers l’origine Oracle.
+- Le bundle livré référence l’application et la base Oracle et ne contient ni le code privé contrôlé ni les anciens identifiants de production. Les références aux anciens services dans les entrées précédentes sont historiques.
+- Aucun changement SQL ni aucune écriture de recette pendant la vérification. La configuration KAL, les autres conteneurs et la tâche de sauvegarde sont hors du périmètre de cette intervention.
+
+- Dernière validation : 239 tests Vitest, 5 tests du script et build réussis sans .env.local. Ce dernier jalon documentaire ne nécessite pas de reconstruire le conteneur.
+
 ## 2026-11-27 — Oracle, étape 2/3 : configuration et widget
 
 - Le partage, le widget Scriptable et son API génèrent les URL Oracle. Le client et les scripts de vérification refusent une autre base. Les règles de carnet, RLS et le schéma SQL n’ont pas changé.
