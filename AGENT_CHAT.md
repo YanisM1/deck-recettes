@@ -6,6 +6,15 @@
 
 ## 📋 Journal des interventions
 
+## 2026-11-27 — Mise en production du livre global sur Oracle
+
+- Autorisation explicite obtenue pour le CRUD anonyme et le Reset Total du livre global. La migration et la copie ont été exécutées dans une seule transaction. Les neuf recettes ont été comparées à la source sans doublon. La table historique contient toujours 365 recettes, dont 356 issues des autres carnets. KAL et les sauvegardes quotidiennes sont restés hors intervention.
+- **Les neuf recettes du livre global** — Ganache chocolat blanc, Gâteau pistache reine de saba, Cake Amandes, Tagliatelle bolognaise, Gratin pâtes au thon, Pistache & Chocolat blanc, Blanquette de veau sans farine, Financier pistache et Suzy Pierre Hermé.
+- `a9bfdec` déployé via le kit Oracle avec reconstruction ciblée de `web-recipe-app-1` et vérification de l’architecture `linux/arm64`. Accueil, `/_health`, racine REST et `/rest/v1/recipes_global` en HTTP 200. La REST retourne neuf identifiants distincts avec la seule clé publique Supabase.
+- Session Chromium vierge à 393 × 852. Les neuf recettes ont été parcourues sans code. Relectures HTTP 200 au chargement, sur `visibilitychange`, `focus`, `pageshow`, `online` et via le bouton de synchronisation. Une transaction de test à résultat net nul a exercé le CRUD anonyme sur une recette synthétique. Le navigateur a reçu l’événement Realtime et relu les neuf recettes en HTTP 200.
+- `deckchef.js` régénéré sur Oracle. Les deux chemins du script, API widget et REST directe de secours, ont été exécutés contre Oracle sans code de carnet. Total de neuf, et lien simple vers la recette du jour vérifié dans le navigateur. Exécution du script vérifiée en simulation des API Scriptable.
+- Sans `.env.local` : 242 tests Vitest, cinq tests du script de vérification et build réussis. Fichier de configuration local restauré après les tests.
+
 ## 2026-11-27 — Récupération du livre global : diagnostic confirmé
 
 - Synchronisation Git et npm réussie. Sauvegarde supplémentaire Recipe uniquement dans `/opt/oracle-apps/recipe-migration-backups/pre-recovery-20261127T095804Z-WLuMi1.dump` (mode 600). `pg_restore --file=/dev/null` a lu l’archive intégralement, sans restauration en base.
